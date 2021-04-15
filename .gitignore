@@ -4,6 +4,7 @@
 /nbproject/Package-*
 /dist
 /build
+/debug
 
 # Prerequisites
 *.d
@@ -57,4 +58,6 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+
 !/MU810_CDC_LIBRARY.X.a

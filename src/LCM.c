@@ -221,8 +221,7 @@ unsigned char LCM_BCD_Regulate(unsigned char BCD) {
             return ' ';
         else
             return '0';
-    }
-    else {
+    } else {
         Disable_Zero = 0;
         return ( BCD += '0');
     }

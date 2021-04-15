@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [Unreleased]
 ---
 
+[0.0.2] - 2021-04-15
+---
+### 臭蟲修復
+- 修復傳送與接收RTCC當前時間的封包資料錯位問題 (resolved [#4])
+
 [0.0.1] - 2021-04-09
 ---
 ### 新增功能
@@ -28,9 +33,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### 通訊
 
 - CAN
-	 - 透過按鍵觸發連續傳送當前時間於CAN Bus
+	 - 透過按鍵觸／每20ms發連續傳送當前時間於CAN Bus
 	 - 透過接收透定ID改寫RTCC時間並顯示於上排七段顯示器
-	 - 每20ms傳送當前時間之"秒"
+	 - 每10ms傳送當前時間之"秒"
 	 - 每100ms傳送讀取的VR1數值
 	 - 每500ms傳送固定參數封包
 - UART
@@ -60,7 +65,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
  - 當按下BT5鍵發出**Beep**聲，放開即停止**Beep**聲
  - 當按下BT3鍵時觸發**美妙旋律**
  - 開機時發出兩短促聲表示開機成功
- - 當時間來到**11:25**與**16:59**時發出**美妙旋律**
+ - 當時間來到**11:25**與**17:00**時發出**美妙旋律**
 
 
 ### 修改功能
@@ -78,7 +83,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### 安全性更新 
 - None
 
+[#4]: https://github.com/liohord/APP044/issues/4
 
 [Unreleased]: https://github.com/liohord/APP044/compare/v0.0.1...HEAD
-[0.0.2]: https://github.com/liohord/APP044/compare/v0.0.1...v0.0.2
+[0.0.2]: https://github.com/liohord/APP044/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/liohord/APP044/releases/tag/0.0.1

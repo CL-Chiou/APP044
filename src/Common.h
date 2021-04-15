@@ -33,8 +33,11 @@ extern "C" {
 #include "time.h"
 #include "MCP79410.h"
 
-    //#define __DEBUG_RTCC__
-
+    /* check if build is for a real debug tool */
+#ifdef __MPLAB_DEBUGGER_SIMULATOR
+#warning Debug with broken MPLAB simulator
+#define USING_SIMULATOR
+#endif
 
 #define UART1_BAUDRATE 115200
 #define UART1_BRP_VAL ((FCY/UART1_BAUDRATE)/4)-1
@@ -93,7 +96,7 @@ extern "C" {
 #define EXT_20MS_ID  0x400
 #define EXT_100MS_ID  0x405
 #define EXT_500MS_ID    0x200
-#define EXT_TRIGGER_ID    0x666
+#define EXT_TRIGGER_ID    0x18ABCDEF
 #define RCVx_ID    0x40
 #define RCVy_ID    0x30
 #define ECAN1_MSG_BUF_LENGTH    32
@@ -111,7 +114,7 @@ extern "C" {
                 unsigned _BT4 : 1;
                 unsigned _BT5 : 1;
             } TACT;
-            unsigned char _TACT;
+            uint8_t _TACT;
         };
 
         union {
@@ -124,13 +127,13 @@ extern "C" {
                 unsigned _DSW5 : 1;
                 unsigned _DSW6 : 1;
             } DIP;
-            unsigned char _DIP;
+            uint8_t _DIP;
         };
     } SW, _SW;
 
     extern struct _tdm {
         unsigned Job : 3;
-        unsigned Task : 2;
+        unsigned Task : 3;
     } TDM; // Time-Division Multiplexing
 
     extern union _mission {
@@ -144,7 +147,7 @@ extern "C" {
             unsigned _TxJob : 1;
             unsigned : 2;
         };
-        unsigned char Jobs;
+        uint8_t Jobs;
     } Mission; // Time-Division Multiplexing
 
     extern struct _flag {
@@ -162,45 +165,45 @@ extern "C" {
     } BuzzerAlarm;
 
     extern struct _clock {
-        unsigned char Year;
-        unsigned char Month;
-        unsigned char Date;
-        unsigned char Weekday;
-        unsigned char Hour;
-        unsigned char Minute;
-        unsigned char Second;
+        uint8_t Year;
+        uint8_t Month;
+        uint8_t Date;
+        uint8_t Weekday;
+        uint8_t Hour;
+        uint8_t Minute;
+        uint8_t Second;
     } CLOCK;
 
     extern union _frame_buffer {
 
         struct {
-            unsigned int SID;
-            unsigned long EID;
-            unsigned char DLC;
-            unsigned char IDE_BIT;
-            unsigned char DATA_IN;
-            unsigned int DataWord0;
-            unsigned int DataWord1;
-            unsigned int DataWord2;
-            unsigned int DataWord3;
+            uint16_t DataWord0;
+            uint16_t DataWord1;
+            uint16_t DataWord2;
+            uint16_t DataWord3;
+            uint16_t SID;
+            uint32_t EID;
+            uint8_t DLC;
+            uint8_t IDE_BIT;
+            uint8_t DATA_IN;
         };
 
         struct {
-            unsigned int Null1;
-            unsigned long Null2;
-            unsigned char Null3;
-            unsigned char Null4;
-            unsigned char Null5;
-            unsigned char Byte0;
-            unsigned char Byte1;
-            unsigned char Byte2;
-            unsigned char Byte3;
-            unsigned char Byte4;
-            unsigned char Byte5;
-            unsigned char Byte6;
-            unsigned char Byte7;
+            uint8_t Byte0;
+            uint8_t Byte1;
+            uint8_t Byte2;
+            uint8_t Byte3;
+            uint8_t Byte4;
+            uint8_t Byte5;
+            uint8_t Byte6;
+            uint8_t Byte7;
+            uint16_t Null1;
+            uint32_t Null2;
+            uint8_t Null3;
+            uint8_t Null4;
+            uint8_t Null5;
         };
-    } FRAME_Buffer;
+    } ;
 
     /*MCP4551*/
     typedef enum {
@@ -224,9 +227,9 @@ extern "C" {
             pot_operationbits OperationBits : 2;
             pot_memoryaddress MemoryAddress : 4;
 
-            unsigned char Data7_0;
+            uint8_t Data7_0;
         };
-        unsigned char Byte[2];
+        uint8_t Byte[2];
     } mcp4551cmd;
 
     typedef enum {
@@ -248,7 +251,7 @@ extern "C" {
             unsigned BUF : 1;
             A_B nA_B : 1;
         };
-        unsigned int Int;
+        uint16_t Int;
     } mcp4922cmd;
 
     /*Debounce*/
@@ -265,8 +268,8 @@ extern "C" {
         dsw6,
     } DebounceSW;
 
-    
-    
+
+
     void DMA0Init(void); //UART1 transmitter
     void DMA1Init(void); //UART1 receiver
     void DMA2Init(void); //ADC1 convert done
@@ -274,7 +277,7 @@ extern "C" {
     void DMA4Init(void); //SPI Reception
     void DMA5Init(void); //ECAN1 Transmission
     void DMA6Init(void); //ECAN1 Reception
-    void DELAY_US(unsigned int DELAY);
+    void DELAY_US(uint16_t DELAY);
 
     uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits OperationBits, uint16_t Data);
 

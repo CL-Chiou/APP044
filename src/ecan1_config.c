@@ -225,7 +225,10 @@ void Ecan1Init(void) {
 
     /* Enter Normal Mode */
     C1CTRL1bits.REQOP = 0;
+#ifdef USING_SIMULATOR
+#else
     while (C1CTRL1bits.OPMODE != 0);
+#endif
 
     /* ECAN transmit/receive message control */
     C1RXFUL1 = C1RXFUL2 = C1RXOVF1 = C1RXOVF2 = 0x0000;
