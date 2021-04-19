@@ -225,8 +225,7 @@ void Ecan1Init(void) {
 
     /* Enter Normal Mode */
     C1CTRL1bits.REQOP = 0;
-#ifdef USING_SIMULATOR
-#else
+#ifndef USING_SIMULATOR
     while (C1CTRL1bits.OPMODE != 0);
 #endif
 

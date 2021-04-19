@@ -128,7 +128,7 @@ union _mission Mission;
 struct _flag FLAG;
 struct _buzzeralarm BuzzerAlarm;
 struct _clock CLOCK;
-union _frame_buffer FRAME_Buffer;
+struct _frame_buffer FRAME_Buffer;
 
 // *****************************************************************************
 // Section: Static Function declaration
@@ -148,21 +148,18 @@ void EXT_ADC_Buf_to_LINE2(void);
 void main(void) {
 #ifdef USING_SIMULATOR
     __C30_UART = 1;
-    printf("USING_SIMULATOR: reseted\n");
+    fprintf(stdout, "USING_SIMULATOR: reseted\n");
 #else
     SYSTEM_Initialize(SYSTEM_STATE_USB_START);
     USBDeviceInit();
     USBDeviceAttach();
     CDCSetLineCoding(9600, NUM_STOP_BITS_1, PARITY_NONE, 8);
 #endif
-
     OscConfig();
     IO_Config();
     Timer1_Initial();
     UART1_Initial();
     /*PWM_Initial();*/
-#ifdef USING_SIMULATOR
-#else
     ADC1_Initial();
     Ecan1Init();
     SPI1_Initialize();
@@ -181,20 +178,13 @@ void main(void) {
 
     LCD_Set_Cursor(0, 0);
     LCD_PutROMString((const uint8_t*) "Hello, World");
-
+    
     BuzzerAlarm._0 = 1;
+#ifndef USING_SIMULATOR
     MCP79410_GetTime();
-#endif 
+#endif
     while (1) {
         Time_Execute();
-    }
-}
-
-void DELAY_US(uint16_t DELAY) {
-    uint16_t i = 0;
-    for (i = 0; i < DELAY; i++) {
-        asm volatile ("REPEAT, #50");
-        Nop(); // 1uS delay
     }
 }
 
@@ -275,8 +265,7 @@ void Time_Execute(void) {
     if (T1Counter_1ms >= 20) {
         _500ms++;
         Check_Button();
-#ifdef USING_SIMULATOR
-#else
+#ifndef USING_SIMULATOR
         USBDeviceTasks();
 #endif
         SEVEN_SEGMENT_SCAN();
@@ -285,8 +274,7 @@ void Time_Execute(void) {
         if (++TDM.Job >= 5) {
 
             TDM.Job = 0;
-#ifdef USING_SIMULATOR
-#else
+#ifndef USING_SIMULATOR
             MCP4922_DualSine();
             MCP4551_Command(Volatile_Wiper_0, WriteData, VR1);
 #endif
@@ -298,12 +286,10 @@ void Time_Execute(void) {
             Mission._TxJob ^= 1;
             Mission.Jobs &= 0xE0;
             ClrWdt();
-
         }
         if (_500ms >= 500) {
             _500ms = 0x00;
-#ifdef USING_SIMULATOR
-#else
+#ifndef USING_SIMULATOR
             /*USB*/
             if ((USBGetDeviceState() < CONFIGURED_STATE) ||
                     (USBIsDeviceSuspended() == true)) {
@@ -324,10 +310,6 @@ void Time_Execute(void) {
 
         }
         T1Counter_1ms = 0x00;
-#ifdef USING_SIMULATOR
-        //printf("SIMULATOR: Job = %d, Task = %d\n", TDM.Job, TDM.Task);
-#endif
-        Nop();
     }
 }
 
@@ -348,7 +330,6 @@ void Update_CLOCK1(void) {
 }
 
 void Time_Buf_to_LINE1(void) {
-
     FIRST_LINE_Data[0] = SEVEN_SEG_PATTERN[CLOCK.Hour / 10];
     FIRST_LINE_Data[1] = SEVEN_SEG_PATTERN[CLOCK.Hour % 10];
     FIRST_LINE_Data[2] = SEVEN_SEG_PATTERN[CLOCK.Minute / 10];
@@ -358,7 +339,6 @@ void Time_Buf_to_LINE1(void) {
 }
 
 void EXT_ADC_Buf_to_LINE2(void) {
-
     uint16_t Temp_Value;
 
     Temp_Value = ADCValues[0];
@@ -390,7 +370,6 @@ uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits Oper
                 break;
             } else TimeOut++;
         }
-        Nop();
     } else {
         I2C2_MasterRead(Command.Byte, 1, RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS, &i2c2_msg_status);
         TimeOut = 0;
@@ -399,7 +378,6 @@ uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits Oper
                 break;
             } else TimeOut++;
         }
-
         if (i2c2_msg_status == I2C2_MESSAGE_COMPLETE) readData = RcvData[1] + ((RcvData[0]&0x01) << 8);
     }
     return readData;
@@ -799,24 +777,37 @@ void initial_LCD(void) {
     if (I2C_STATUS.Enale) {
         I2C_STATUS._4bit = 1;
         LCD_WriteInstruction(0x3);
+#ifndef USING_SIMULATOR
         __delay_us(3000); /*wait time > 4.5ms*/
+#endif
 
         LCD_WriteInstruction(0x3);
+#ifndef USING_SIMULATOR
         __delay_us(1500); /*wait time > 1.5ms*/
+#endif
 
         LCD_WriteInstruction(0x3);
+#ifndef USING_SIMULATOR
         __delay_us(100); /*wait time > 100us*/
+#endif
 
         LCD_WriteInstruction(0x2);
+#ifndef USING_SIMULATOR
         __delay_us(100); /*wait time > 100us*/
+#endif
+
         I2C_STATUS._4bit = 0;
     }
-
     LCD_WriteInstruction(FOUR_BIT);
+#ifndef USING_SIMULATOR
     __delay_us(100); /*wait time > 100us*/
+#endif
 
     LCD_WriteInstruction(CURSOR_ON);
+#ifndef USING_SIMULATOR
     __delay_us(1800); /*wait time > 1.6ms*/
+#endif
+
 }
 
 void LCD_WriteInstruction(uint8_t Instruction) {
@@ -845,6 +836,7 @@ void LCD_WriteInstruction(uint8_t Instruction) {
     *Temporary++ = I2C_LCD.Byte;
     I2C2_MasterWrite(LCD_Instruction, length, I2C_ADRRESS.Address, &i2c2_msg_status);
     TimeOut = 0;
+#ifndef USING_SIMULATOR
     while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
         // add some delay here
 
@@ -854,6 +846,7 @@ void LCD_WriteInstruction(uint8_t Instruction) {
             break;
         } else TimeOut++;
     }
+#endif
 }
 
 void LCD_WriteData(uint8_t DATA) {
@@ -879,6 +872,7 @@ void LCD_WriteData(uint8_t DATA) {
     *Temporary++ = I2C_LCD.Byte;
     I2C2_MasterWrite(LCD_Data, length, I2C_ADRRESS.Address, &i2c2_msg_status);
     slaveTimeOut = 0;
+#ifndef USING_SIMULATOR
     while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
         // add some delay here
 
@@ -888,16 +882,21 @@ void LCD_WriteData(uint8_t DATA) {
             break;
         } else slaveTimeOut++;
     }
+#endif
 }
 
 void LCD_PutROMString(const uint8_t *String) {
     while (*String != 0x00) {
         LCD_WriteData(*String++);
+#ifndef USING_SIMULATOR
         __delay_us(50);
+#endif
     }
 }
 
 void LCD_Set_Cursor(uint8_t CurY, uint8_t CurX) {
     LCD_WriteInstruction(0x80 + CurY * 0x40 + CurX);
+#ifndef USING_SIMULATOR
     __delay_us(50);
+#endif
 }

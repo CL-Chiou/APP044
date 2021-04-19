@@ -402,7 +402,10 @@ unsigned char MCP79410_bcd2dec(unsigned char num) {
 }
 
 uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R nW_R) {
-    DELAY_US(7);
+#ifndef USING_SIMULATOR
+    __delay_us(7);
+#endif
+
     I2C1_TRANSACTION_REQUEST_BLOCK readTRB[2];
     unsigned int TimeOut = 0, readData = 0;
     unsigned char Command[2], RecData[1];
@@ -410,6 +413,7 @@ uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R
     Command[1] = data;
     if (nW_R == Write) {
         I2C1_MasterWrite(Command, 2, SLAVE_I2C1_MCP79410_REG_ADDRESS, &i2c1_msg_status);
+#ifndef USING_SIMULATOR
         while (i2c1_msg_status == I2C1_MESSAGE_PENDING) {
             if (TimeOut == SLAVE_I2C1_MCP79410_DEVICE_TIMEOUT) {
                 return (0);
@@ -419,6 +423,7 @@ uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R
                 break;
             }
         }
+#endif
         Nop();
     } else if (nW_R == Read) {
         // Build TRB for sending address
@@ -426,6 +431,7 @@ uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R
         // Build TRB for receiving data
         I2C1_MasterReadTRBBuild(&readTRB[1], RecData, 1, SLAVE_I2C1_MCP79410_REG_ADDRESS);
         I2C1_MasterTRBInsert(2, readTRB, &i2c1_msg_status);
+#ifndef USING_SIMULATOR
         while (i2c1_msg_status == I2C1_MESSAGE_PENDING) {
             if (TimeOut == SLAVE_I2C1_MCP79410_DEVICE_TIMEOUT) {
                 return (0);
@@ -435,6 +441,7 @@ uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R
                 break;
             }
         }
+#endif
         if (i2c1_msg_status == I2C1_MESSAGE_COMPLETE) {
             readData = RecData[0];
         }

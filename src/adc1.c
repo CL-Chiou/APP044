@@ -26,8 +26,8 @@ void __attribute__((__interrupt__, no_auto_psv)) _DMA2Interrupt(void) {
     MDC = ADCValues[0];
 }
 
-/*void __attribute__((__interrupt__, no_auto_psv)) _AD1Interrupt(void) {
-    LED3 = 1;
+void __attribute__((__interrupt__, no_auto_psv)) _AD1Interrupt(void) {
+    /*LED3 = 1;
     ADCValues[0] = adc2volt_3_3V(ADC1BUF0); // Read the VR1 conversion result
     ADCValues[1] = adc2volt_3_3V(ADC1BUF1); // Read the ANIN4 conversion result
     ADCValues[2] = adc2volt_3_3V(ADC1BUF2); // Read the ANIN3 conversion result
@@ -39,12 +39,11 @@ void __attribute__((__interrupt__, no_auto_psv)) _DMA2Interrupt(void) {
     UART1_TX_BUFFER[3] = (ADCValues[0] % 10) + '0';
     DMA0CONbits.CHEN = 1; // Enable DMA2 channel
     DMA0REQbits.FORCE = 1; // Manual mode:Kick-start the 1st transfer
+    LED3 = 0;*/
     IFS0bits.AD1IF = 0;
-    LED3 = 0;
-}*/
+}
 
 void ADC1_Initial(void) { /*TAD >= 117.6nS*/
-
     /* Set port configuration */
     ANSELBbits.ANSB0 = 1; // Ensure AN0/RB0 is analog; VR1
     ANSELBbits.ANSB1 = 1; // Ensure AN1/RB1 is analog; ANIN4
@@ -85,12 +84,15 @@ void ADC1_Initial(void) { /*TAD >= 117.6nS*/
     AD1CSSH = 0x0000;
     AD1CSSL = 0x0000;
 
-    //IEC0bits.AD1IE = 1;
-    //IPC3bits.AD1IP = 1;
+    IEC0bits.AD1IE = 0;
+    IPC3bits.AD1IP = 1;
     AD1CON1bits.ADON = 1;
-
-    DELAY_US(20);
+    
+#ifndef USING_SIMULATOR 
+    __delay_us(20);
     Timer3_Initial();
+#endif   
+    
     DMA2Init();
 
 }

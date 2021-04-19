@@ -174,36 +174,49 @@ extern "C" {
         uint8_t Second;
     } CLOCK;
 
-    extern union _frame_buffer {
+    extern struct _frame_buffer { /*The argument to the aligned attribute must be a power of two.*/
 
-        struct {
-            uint16_t DataWord0;
-            uint16_t DataWord1;
-            uint16_t DataWord2;
-            uint16_t DataWord3;
-            uint16_t SID;
-            uint32_t EID;
-            uint8_t DLC;
-            uint8_t IDE_BIT;
-            uint8_t DATA_IN;
+        union {
+
+            struct {
+                uint16_t SID;
+                uint32_t EID;
+                uint8_t DLC;
+                uint8_t IDE_BIT;
+                uint8_t DATA_IN;
+            };
+
+            struct {
+                uint16_t Null1;
+                uint32_t Null2;
+                uint8_t Null3;
+                uint8_t Null4;
+                uint8_t Null5;
+            };
         };
 
-        struct {
-            uint8_t Byte0;
-            uint8_t Byte1;
-            uint8_t Byte2;
-            uint8_t Byte3;
-            uint8_t Byte4;
-            uint8_t Byte5;
-            uint8_t Byte6;
-            uint8_t Byte7;
-            uint16_t Null1;
-            uint32_t Null2;
-            uint8_t Null3;
-            uint8_t Null4;
-            uint8_t Null5;
+        union {
+
+            struct {
+                uint16_t DataWord0;
+                uint16_t DataWord1;
+                uint16_t DataWord2;
+                uint16_t DataWord3;
+
+            };
+
+            struct {
+                uint8_t Byte0;
+                uint8_t Byte1;
+                uint8_t Byte2;
+                uint8_t Byte3;
+                uint8_t Byte4;
+                uint8_t Byte5;
+                uint8_t Byte6;
+                uint8_t Byte7;
+            };
         };
-    } ;
+    };
 
     /*MCP4551*/
     typedef enum {
@@ -277,7 +290,6 @@ extern "C" {
     void DMA4Init(void); //SPI Reception
     void DMA5Init(void); //ECAN1 Transmission
     void DMA6Init(void); //ECAN1 Reception
-    void DELAY_US(uint16_t DELAY);
 
     uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits OperationBits, uint16_t Data);
 

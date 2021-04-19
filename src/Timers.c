@@ -35,12 +35,9 @@ void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt(void) {
         T1Counter = 0;
         T1Counter_1000ms++;
         LED_Toggle(LED_D1);
-        
         if (T1Counter_1000ms >= 2) {
             T1Counter_1000ms = 0;
-
             FLAG.Second = 1;
-
         }
     }
     if (BuzzerTimeCNT <= 4 && BuzzerFlag) Buzzer = 1;
@@ -64,13 +61,13 @@ void Timer1_Initial(void) { //20kHz
 
 }
 
-void Timer3_Initial(void) {//1kHz
-    TMR3 = 0x00;
-    PR3 = 5000;
+void Timer3_Initial(void) { //1kHz
     T3CONbits.TCKPS = 0b01; //01 = 1:8
     T3CONbits.TCS = 0;
+    TMR3 = 0x00;
+    PR3 = 5000;
     IPC2bits.T3IP = 0x01; // Set Timer3 Interrupt Priority Level
     IFS0bits.T3IF = 0; // Clear Timer3 Interrupt Flag
-    IEC0bits.T3IE = 1;
+    IEC0bits.T3IE = 0;
     T3CONbits.TON = 1;
 }

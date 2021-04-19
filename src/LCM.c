@@ -9,14 +9,6 @@
 #include <xc.h>
 #include "Common.h"
 
-#define IntLCM_Delay1us         ( FCY * 1 ) / 1000000L / 60
-#define IntLCM_Delay10us        ( FCY * 10 ) / 1000000L / 60
-#define IntLCM_Delay100us       ( FCY * 100 ) / 1000000L / 60
-
-#define IntLCM_Delay1ms			( FCY * 1 ) / 1000L / 60
-#define IntLCM_Delay10ms		( FCY * 10 ) / 1000L / 60
-#define IntLCM_Delay100ms		( FCY * 100 ) / 1000L / 60
-
 #define LCM_RS LATGbits.LATG15
 #define LCM_RW LATEbits.LATE6
 #define LCM_E LATEbits.LATE3
@@ -55,19 +47,12 @@ void LCM_IOSetup(void) {
     LCM_D7 = 0;
 }
 
-void LCM_Delay(unsigned long Count) {
-    unsigned char i = 0;
-    unsigned long j = 0;
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < Count; j++);
-    }
-}
-
 void IntLCM_Communication(unsigned char NibbleByte) {
     unsigned char Temporary;
     //Temporary = NibbleByte & 0x0f;
-
-    LCM_Delay(IntLCM_Delay1us); // tAS
+#ifndef USING_SIMULATOR
+    __delay_us(1); // tAS
+#endif
 
     LCM_D7 = 0;
     LCM_D6 = 0;
@@ -91,10 +76,14 @@ void IntLCM_Communication(unsigned char NibbleByte) {
         LCM_D4 = 1;
 
     LCM_E = 1;
-    LCM_Delay(IntLCM_Delay1us); //PWEH
+#ifndef USING_SIMULATOR
+    __delay_us(1); //PWEH
+#endif
 
     LCM_E = 0;
-    LCM_Delay(IntLCM_Delay1us); //tAH
+#ifndef USING_SIMULATOR
+    __delay_us(1); //tAH
+#endif
 }
 
 unsigned char LCM_IsBusy(void) {
@@ -120,7 +109,9 @@ unsigned char LCM_IsBusy(void) {
 }
 
 void IntLCM_WriteData(unsigned char Data) {
+#ifndef USING_SIMULATOR
     while (LCM_IsBusy());
+#endif
     LCM_RS = 1; // RS = 1 , Data
     LCM_RW = 0;
 
@@ -129,7 +120,9 @@ void IntLCM_WriteData(unsigned char Data) {
 }
 
 void IntLCM_WriteInstruction(unsigned char Instruction) {
+#ifndef USING_SIMULATOR
     while (LCM_IsBusy());
+#endif
     LCM_RS = 0; // RS = 0 , Instruction
     LCM_RW = 0;
 
@@ -144,36 +137,54 @@ void LCM_Init(void) {
     LCM_RW = 0;
 
     IntLCM_Communication(0x03); // Reset
-    LCM_Delay(IntLCM_Delay1ms * 4.1); // Wait 4.1 mSecs
+#ifndef USING_SIMULATOR
+    __delay_ms(4.1); // Wait 4.1 mSecs
+#endif
 
     IntLCM_Communication(0x03); // Reset
-    LCM_Delay(IntLCM_Delay100us); // Wait 100 uSecs
+#ifndef USING_SIMULATOR
+    __delay_us(100); // Wait 100 uSecs
+#endif
 
     IntLCM_Communication(0x03); // Reset
-    LCM_Delay(IntLCM_Delay100us); // Wait 100 uSecs
+#ifndef USING_SIMULATOR
+    __delay_us(100); // Wait 100 uSecs
+#endif
 
     IntLCM_Communication(0x02);
-    LCM_Delay(IntLCM_Delay100us); // Wait 100 uSecs
+#ifndef USING_SIMULATOR
+    __delay_us(100); // Wait 100 uSecs
+#endif
 
     IntLCM_Communication((0x28 >> 4) & 0x0f);
     IntLCM_Communication(0x28 & 0xf);
-    LCM_Delay(IntLCM_Delay10us * 3.7);
+#ifndef USING_SIMULATOR
+    __delay_us(37);
+#endif
 
     IntLCM_Communication((Disp_Off >> 4) & 0x0f); // Dsplay Off
     IntLCM_Communication(Disp_Off & 0xf);
-    LCM_Delay(IntLCM_Delay10us * 3.7);
+#ifndef USING_SIMULATOR
+    __delay_us(37);
+#endif
 
     IntLCM_Communication((Disp_Clear >> 4) & 0x0f); // Dsplay Clear
     IntLCM_Communication(Disp_Clear & 0xf);
-    LCM_Delay(IntLCM_Delay1ms * 1.52);
+#ifndef USING_SIMULATOR
+    __delay_ms(1.52);
+#endif
 
     IntLCM_Communication((Disp_Entry_Inc >> 4) & 0x0f); // Entry Mode
     IntLCM_Communication(Disp_Entry_Inc & 0xf);
-    LCM_Delay(IntLCM_Delay10us * 3.7);
+#ifndef USING_SIMULATOR
+    __delay_us(37);
+#endif
 
     IntLCM_Communication((Disp_On >> 4) & 0x0f); // Display On
     IntLCM_Communication(Disp_On & 0xf);
-    LCM_Delay(IntLCM_Delay10us * 3.7);
+#ifndef USING_SIMULATOR
+    __delay_us(37);
+#endif
 }
 
 void LCM_SetCursor(unsigned char Y, unsigned char X) {
