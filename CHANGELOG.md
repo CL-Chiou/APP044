@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 [Unreleased]
 ---
 
+[0.1.0] - 2021-04-20
+---
+### 新增功能
+ - 7段顯示器報時與RTCC實際時間的誤差最小化
+ - I2C連線與斷線判斷
+
+### 臭蟲修復
+- LCM不顯示問題
+
 [0.0.2] - 2021-04-15
 ---
 ### 臭蟲修復
@@ -85,6 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 [#4]: https://github.com/liohord/APP044/issues/4
 
-[Unreleased]: https://github.com/liohord/APP044/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/liohord/APP044/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/liohord/APP044/compare/0.0.2...0.1.0
 [0.0.2]: https://github.com/liohord/APP044/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/liohord/APP044/releases/tag/0.0.1

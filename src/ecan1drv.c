@@ -76,10 +76,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
  *****************************************************************************/
 void Ecan1WriteRxAcptFilter(int16_t n, int32_t identifier, uint16_t exide, uint16_t bufPnt, uint16_t maskSel) {
     uint32_t sid10_0 = 0;
-
     uint32_t eid15_0 = 0;
-
     uint32_t eid17_16 = 0;
+    
     uint16_t *sidRegAddr;
     uint16_t *bufPntRegAddr;
     uint16_t *maskSelRegAddr;
@@ -146,9 +145,7 @@ void Ecan1WriteRxAcptFilter(int16_t n, int32_t identifier, uint16_t exide, uint1
  *****************************************************************************/
 void Ecan1WriteRxAcptMask(int16_t m, int32_t identifier, uint16_t mide, uint16_t exide) {
     uint32_t sid10_0 = 0;
-
     uint32_t eid15_0 = 0;
-
     uint32_t eid17_16 = 0;
     uint16_t *maskRegAddr;
 
@@ -255,10 +252,9 @@ void Ecan1WriteRxAcptMask(int16_t m, int32_t identifier, uint16_t mide, uint16_t
  *****************************************************************************/
 void Ecan1WriteTxMsgBufId(uint16_t buf, int32_t txIdentifier, uint16_t ide, uint16_t remoteTransmit) {
     uint32_t word0 = 0;
-
     uint32_t word1 = 0;
-
     uint32_t word2 = 0;
+
     uint32_t sid10_0 = 0;
     uint32_t eid5_0 = 0;
     uint32_t eid17_6 = 0;
@@ -307,7 +303,11 @@ void Ecan1WriteTxMsgBufId(uint16_t buf, int32_t txIdentifier, uint16_t ide, uint
  *
  * Overview:      This function transmits ECAN data.
  *****************************************************************************/
-void Ecan1WriteTxMsgBufData(uint16_t buf, uint16_t dataLength, uint16_t data1, uint16_t data2, uint16_t data3,
+void Ecan1WriteTxMsgBufData(uint16_t buf,
+        uint16_t dataLength,
+        uint16_t data1,
+        uint16_t data2,
+        uint16_t data3,
         uint16_t data4) {
     ecan1msgBuf[buf][2] = ((ecan1msgBuf[buf][2] & 0xFFF0) + dataLength);
 

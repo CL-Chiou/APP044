@@ -75,13 +75,13 @@ typedef enum {
 
 /*MCP79410*/
 typedef struct _RTCC_Struct {
-    unsigned char sec;
-    unsigned char min;
-    unsigned char hour;
-    unsigned char weekday;
-    unsigned char date;
-    unsigned char month;
-    unsigned char year;
+    uint8_t sec;
+    uint8_t min;
+    uint8_t hour;
+    uint8_t weekday;
+    uint8_t date;
+    uint8_t month;
+    uint8_t year;
 } RTCC_Struct;
 
 typedef enum Alarm {
@@ -171,7 +171,7 @@ typedef enum MFP_POL {
 void MCP79410_Initialize(void);
 void MCP79410_EnableOscillator(void);
 void MCP79410_DisableOscillator(void);
-unsigned char MCP79410_IsRunning(void);
+uint8_t MCP79410_IsRunning(void);
 
 void MCP79410_GetTime(void);
 void MCP79410_SetTime(RTCC_Struct *time);
@@ -188,15 +188,15 @@ void MCP79410_SetAlarmMatch(Match_t match, Alarm_t alarm);
 void MCP79410_SetMFP_Functionality(MFP_t mode);
 void MCP79410_SetMFP_GPOStatus(Polarity_t status);
 
-unsigned char MCP79410_CheckPowerFailure(void);
-unsigned char MCP79410_IsVbatEnabled(void);
+uint8_t MCP79410_CheckPowerFailure(void);
+uint8_t MCP79410_IsVbatEnabled(void);
 void MCP79410_EnableVbat(void);
 void MCP79410_DisableVbat(void);
 RTCC_Struct* MCP79410_GetPowerUpTime(void);
 RTCC_Struct* MCP79410_GetPowerDownTime(void);
 
-unsigned char MCP79410_dec2bcd(unsigned char num);
-unsigned char MCP79410_bcd2dec(unsigned char num);
+uint8_t MCP79410_dec2bcd(uint8_t num);
+uint8_t MCP79410_bcd2dec(uint8_t num);
 uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R nW_R);
 
 void MCP79410_EnableVbat(void);

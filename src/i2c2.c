@@ -15,7 +15,7 @@
     This header file provides APIs for driver for i2c2.
     Generation Information :
         Product Revision  :  PIC24 / dsPIC33 / PIC32MM MCUs - 1.165.0
-        Device            :  dsPIC33EP512MU810
+        I2C_Device            :  dsPIC33EP512MU810
 
     The generated drivers are tested against the following:
         Compiler          :  XC16 v1.41
@@ -165,7 +165,7 @@ typedef enum {
 #define I2C2_ACKNOWLEDGE_ENABLE_BIT             I2C2CONbits.ACKEN 	// I2C ACK start control bit.
 #define I2C2_ACKNOWLEDGE_DATA_BIT               I2C2CONbits.ACKDT	// I2C ACK data control bit.
 
-I2C2_MESSAGE_STATUS i2c2_msg_status;
+
 /**
  Section: Local Functions
  */
@@ -521,8 +521,29 @@ static void I2C2_FunctionComplete(void) {
 }
 
 static void I2C2_Stop(I2C2_MESSAGE_STATUS completion_code) {
+    extern union _i2c_address I2C_ADRRESS;
+    extern union _i2c_device I2C_Device;
     // then send a stop
     I2C2_STOP_CONDITION_ENABLE_BIT = 1;
+    if (completion_code != I2C2_MESSAGE_COMPLETE) {
+        switch (I2C_ADRRESS.Address) {
+            case SLAVE_I2C_LCD_ADDRESS:
+                I2C_Device.LCD = 0;
+                break;
+            case SLAVE_I2C_RPB1600_ADDRESS:
+                I2C_Device.RPB1600 = 0;
+                break;
+            case SLAVE_I2C1_MCP79410_REG_ADDRESS:
+            case SLAVE_I2C1_MCP79410_EEPROM_ADDRESS:
+                I2C_Device.MCP79410 = 0;
+                break;
+            case SLAVE_I2C2_MCP4551_ADDRESS:
+                I2C_Device.MCP4551 = 0;
+                break;
+            default:
+                break;
+        }
+    }
 
     // make sure the flag pointer is not NULL
     if (p_i2c2_current->pTrFlag != NULL) {
@@ -545,7 +566,7 @@ void I2C2_MasterWrite(
     // check if there is space in the queue
     if (i2c2_object.trStatus.s.full != true) {
         I2C2_MasterWriteTRBBuild(&trBlock, pdata, length, address);
-        I2C2_MasterWriteTRBInsert(1, &trBlock, pstatus);
+        I2C2_MasterTRBInsert(1, &trBlock, pstatus);
     } else {
         *pstatus = I2C2_MESSAGE_FAIL;
     }
@@ -553,53 +574,24 @@ void I2C2_MasterWrite(
 }
 
 void I2C2_MasterRead(
-        uint8_t *pWdata,
-        uint8_t Wlength,
-        uint8_t *pRdata,
-        uint8_t Rlength,
+        uint8_t *pdata,
+        uint8_t length,
         uint16_t address,
-        I2C2_MESSAGE_STATUS * pflag) {
-    static I2C2_TRANSACTION_REQUEST_BLOCK trWBlock;
-    static I2C2_TRANSACTION_REQUEST_BLOCK trRBlock;
-    // wait for the message to be sent or status has changed.
-    unsigned int TimeOut1;
-    TimeOut1 = 0;
-    while (i2c2_state != S_MASTER_IDLE) {
-        // add some delay here
+        I2C2_MESSAGE_STATUS *pstatus) {
+    static I2C2_TRANSACTION_REQUEST_BLOCK trBlock;
 
-        // timeout checking
-        // check for max retry and skip this byte
-        if (TimeOut1 == SLAVE_I2C2_DEVICE_TIMEOUT) {
-            I2C2_Stop(I2C2_STUCK_START);
-        } else TimeOut1++;
-    }
+
     // check if there is space in the queue
     if (i2c2_object.trStatus.s.full != true) {
-        I2C2_MasterWriteTRBBuild(&trWBlock, pWdata, Wlength, address);
-        I2C2_MasterReadTRBBuild(&trRBlock, pRdata, Rlength, address);
-        while (i2c2_state != S_MASTER_IDLE);
-        I2C2_MasterReadTRBInsert(1, &trWBlock, pflag);
-        unsigned int TimeOut2;
-        TimeOut2 = 0;
-        while (*pflag == I2C2_MESSAGE_PENDING) {
-            // add some delay here
-
-            // timeout checking
-            // check for max retry and skip this byte
-            if (TimeOut2 == SLAVE_I2C2_DEVICE_TIMEOUT) {
-                break;
-            } else TimeOut2++;
-        }
-        if (*pflag != I2C2_MESSAGE_FAIL) {
-            I2C2_MasterWriteTRBInsert(1, &trRBlock, pflag);
-        }
-
+        I2C2_MasterReadTRBBuild(&trBlock, pdata, length, address);
+        I2C2_MasterTRBInsert(1, &trBlock, pstatus);
     } else {
-        *pflag = I2C2_MESSAGE_FAIL;
+        *pstatus = I2C2_MESSAGE_FAIL;
     }
+
 }
 
-void I2C2_MasterWriteTRBInsert(
+void I2C2_MasterTRBInsert(
         uint8_t count,
         I2C2_TRANSACTION_REQUEST_BLOCK *ptrb_list,
         I2C2_MESSAGE_STATUS *pflag) {
@@ -642,38 +634,6 @@ void I2C2_MasterWriteTRBInsert(
 
 }
 
-void I2C2_MasterReadTRBInsert(
-        uint8_t count,
-        I2C2_TRANSACTION_REQUEST_BLOCK *ptrb_list,
-        I2C2_MESSAGE_STATUS * pflag) {
-
-    // check if there is space in the queue
-    if (i2c2_object.trStatus.s.full != true) {
-        *pflag = I2C2_MESSAGE_PENDING;
-
-        i2c2_object.pTrTail->ptrb_list = ptrb_list;
-        i2c2_object.pTrTail->count = count;
-        i2c2_object.pTrTail->pTrFlag = pflag;
-        i2c2_object.pTrTail++;
-
-        // check if the end of the array is reached
-        if (i2c2_object.pTrTail == (i2c2_tr_queue + I2C2_CONFIG_TR_QUEUE_LENGTH)) {
-            // adjust to restart at the beginning of the array
-            i2c2_object.pTrTail = i2c2_tr_queue;
-        }
-
-        // since we added one item to be processed, we know
-        // it is not empty, so set the empty i2c2_msg_status to false
-        i2c2_object.trStatus.s.empty = false;
-
-        // check if full
-        if (i2c2_object.pTrHead == i2c2_object.pTrTail) {
-            // it is full, set the full i2c2_msg_status to true
-            i2c2_object.trStatus.s.full = true;
-        }
-    }
-}
-
 void I2C2_MasterReadTRBBuild(
         I2C2_TRANSACTION_REQUEST_BLOCK *ptrb,
         uint8_t *pdata,
@@ -697,11 +657,11 @@ void I2C2_MasterWriteTRBBuild(
 }
 
 bool I2C2_MasterQueueIsEmpty(void) {
-    return ((bool) i2c2_object.trStatus.s.empty);
+    return (i2c2_object.trStatus.s.empty);
 }
 
 bool I2C2_MasterQueueIsFull(void) {
-    return ((bool) i2c2_object.trStatus.s.full);
+    return (i2c2_object.trStatus.s.full);
 }
 
 /**

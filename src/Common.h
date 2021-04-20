@@ -77,29 +77,34 @@ extern "C" {
     /*UART1*/
 #define UART1_BUFFER_SIZE 24
 
-    /*I2C1*/
-#define SLAVE_I2C1_DEVICE_TIMEOUT 1500
-#define SLAVE_I2C1_MCP79410_DEVICE_TIMEOUT 1500   // define slave timeout 
-#define MCP79410_RETRY_MAX 500
+    /*I2C*/
+#define MAX_TRY 500
+#define SLAVE_I2C_RPB1600_ADDRESS 0x47
+#define SLAVE_I2C_LCD_ADDRESS 0x27
     /*RTCC Register/SRAM Control Byte*/
 #define SLAVE_I2C1_MCP79410_REG_ADDRESS 0x6F /*MCP79410 ‘1101 111’b*/
     /*EEPROM Control Byte*/
 #define SLAVE_I2C1_MCP79410_EEPROM_ADDRESS 0x57 /*MCP79410 ‘1010 111’b*/
+#define SLAVE_I2C2_MCP4551_ADDRESS 0x2E /*MCP45X1 ‘0101 11’b + A0*/
+
+    /*I2C1*/
+#define SLAVE_I2C1_DEVICE_TIMEOUT 1500
+#define SLAVE_I2C1_MCP79410_DEVICE_TIMEOUT 1500   // define slave timeout 
+#define MCP79410_RETRY_MAX 500
 
     /*I2C2*/
 #define SLAVE_I2C2_DEVICE_TIMEOUT 1500
     /*MCP4551-103E/XX: 10 kOhm, 8-LD Device*/
 #define SLAVE_I2C2_MCP4551_DEVICE_TIMEOUT 1500   // define slave timeout 
-#define SLAVE_I2C2_MCP4551_ADDRESS 0x2E /*MCP45X1 ‘0101 11’b + A0*/
 
     /*ECAN1*/
 #define EXT_20MS_ID  0x400
 #define EXT_100MS_ID  0x405
 #define EXT_500MS_ID    0x200
 #define EXT_TRIGGER_ID    0x18ABCDEF
-#define RCVx_ID    0x40
-#define RCVy_ID    0x30
-#define ECAN1_MSG_BUF_LENGTH    32
+#define RCVx_ID 0x40
+#define RCVy_ID 0x30
+#define ECAN1_MSG_BUF_LENGTH 32
     typedef uint16_t ECAN1MSGBUF[ECAN1_MSG_BUF_LENGTH][8];
     __eds__ extern ECAN1MSGBUF ecan1msgBuf
     __attribute__((space(eds), aligned(ECAN1_MSG_BUF_LENGTH * 16)));
@@ -216,7 +221,58 @@ extern "C" {
                 uint8_t Byte7;
             };
         };
-    };
+    } FRAME_Buffer;
+
+    extern struct _i2c_status {
+        unsigned Enale : 1;
+        unsigned _4bit : 1;
+    } I2C_STATUS;
+
+    extern union _i2c_lcd {
+
+        struct {
+            unsigned RS : 1; //p0
+            unsigned RW : 1; //p1
+            unsigned EN : 1; //p2
+            unsigned BL : 1; //p3
+            unsigned D4 : 1; //p4
+            unsigned D5 : 1; //p5
+            unsigned D6 : 1; //p6
+            unsigned D7 : 1; //p7
+        };
+
+        struct {
+            unsigned : 4;
+            unsigned D7_D4 : 4;
+        };
+        uint8_t Byte;
+    } I2C_LCD;
+
+    extern union _i2c_address {
+
+        struct {
+            unsigned R_nW : 1;
+            unsigned Address : 7;
+        };
+        uint8_t Address_R_nW;
+    } I2C_ADRRESS;
+
+    extern union _i2c_device {
+
+        struct {
+            unsigned LCD : 1;
+            unsigned RPB1600 : 1;
+            unsigned MCP4551 : 1;
+            unsigned MCP79410 : 1;
+            unsigned Check : 1;
+        };
+        unsigned char ALL;
+    } I2C_Device;
+
+    typedef enum {
+        I2C1 = 1,
+        I2C2 = 2
+    } i2c_modules;
 
     /*MCP4551*/
     typedef enum {

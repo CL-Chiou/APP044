@@ -11,7 +11,7 @@
 
 /*i2c*/
 extern I2C1_MESSAGE_STATUS i2c1_msg_status;
-extern I2C2_MESSAGE_STATUS i2c2_msg_status;
+I2C2_MESSAGE_STATUS i2c2_msg_status;
 /*timer1*/
 extern uint16_t T1Counter_1ms;
 uint16_t _10ms = 0, _100ms = 0, _500ms = 0;
@@ -26,6 +26,7 @@ extern uint16_t VR1, ADCValues_BUFFER[8];
 extern int ADCValues[8];
 /*USB CDC*/
 char CDC_Buffer[64];
+uint8_t Device_USB;
 /*Buzzer*/
 uint8_t BuzzerTimeCNT;
 uint8_t BuzzerFlag;
@@ -37,7 +38,7 @@ uint8_t bz;
 __eds__ ECAN1MSGBUF ecan1msgBuf __attribute__((space(eds), aligned(ECAN1_MSG_BUF_LENGTH * 16)));
 uint32_t CANidentifier;
 /*Debounce*/
-uint8_t Switch_DeBounce_On[10], Switch_DeBounce_Off[10], Deboune = 20;
+uint8_t Switch_DeBounce_On[10], Switch_DeBounce_Off[10], Deboune = 20, TimeChanged = 99;
 /*RTCC*/
 extern RTCC_Struct CurrentTime;
 uint8_t SetTime;
@@ -57,41 +58,8 @@ const uint8_t Music_Beep[29] = {100, 100, 0, 0, 100, 100, 0, 0, 100, 0, 100, 0, 
 #define DSW3 !PORTBbits.RB9 /*DSW3*/
 #define DSW4 !PORTBbits.RB10 /*DSW4*/
 #define DSW5 !PORTBbits.RB11 /*DSW5*/
-#define DSW6 !PORTAbits.RA1 /*DSW3*/
+#define DSW6 !PORTAbits.RA1 /*DSW6*/
 
-struct {
-    unsigned Enale : 1;
-    unsigned _4bit : 1;
-} I2C_STATUS;
-
-union {
-
-    struct {
-        unsigned RS : 1; //p0
-        unsigned RW : 1; //p1
-        unsigned EN : 1; //p2
-        unsigned BL : 1; //p3
-        unsigned D4 : 1; //p4
-        unsigned D5 : 1; //p5
-        unsigned D6 : 1; //p6
-        unsigned D7 : 1; //p7
-    };
-
-    struct {
-        unsigned : 4;
-        unsigned D7_D4 : 4;
-    };
-    uint8_t Byte;
-} I2C_LCD;
-
-union {
-
-    struct {
-        unsigned R_nW : 1;
-        unsigned Address : 7;
-    };
-    uint8_t Address_R_nW;
-} I2C_ADRRESS;
 /* Display ON/OFF Control defines */
 #define DON                     0b00001111  /* Display on      */
 #define DOFF                    0b00001011  /* Display off     */
@@ -114,13 +82,18 @@ union {
 #define LINE_5X7                0b00110000  /* 5x7 characters, single line   */
 #define LINE_5X10               0b00110100  /* 5x10 characters               */
 #define LINES_5X7               0b00111000  /* 5x7 characters, multiple line */
+
+uint8_t I2C_Check_Device(uint8_t ADDRESS, i2c_modules MODULES);
 void initial_LCD(void);
 void LCD_WriteInstruction(uint8_t Instruction);
 void LCD_WriteData(uint8_t DATA);
 void LCD_Set_Cursor(uint8_t CurY, uint8_t CurX);
 void LCD_PutROMString(const uint8_t *String);
 
-
+struct _i2c_status I2C_STATUS;
+union _i2c_lcd I2C_LCD;
+union _i2c_address I2C_ADRRESS;
+union _i2c_device I2C_Device;
 
 struct _switch SW, _SW;
 struct _tdm TDM;
@@ -139,21 +112,22 @@ void IO_Config(void);
 void Time_Execute(void);
 void Mission_Execute(void);
 void Check_Button(void);
-void Debounce_Execute(uint8_t Input, DebounceSW Switch);
+void Debounce_Execute(uint16_t Input, DebounceSW Switch);
 void Buzzer_Execute(void);
 void Update_CLOCK1(void);
 void Time_Buf_to_LINE1(void);
 void EXT_ADC_Buf_to_LINE2(void);
 
-void main(void) {
+int main(void) {
 #ifdef USING_SIMULATOR
     __C30_UART = 1;
     fprintf(stdout, "USING_SIMULATOR: reseted\n");
 #else
-    SYSTEM_Initialize(SYSTEM_STATE_USB_START);
+    /*SYSTEM_Initialize(SYSTEM_STATE_USB_START);
     USBDeviceInit();
     USBDeviceAttach();
     CDCSetLineCoding(9600, NUM_STOP_BITS_1, PARITY_NONE, 8);
+    Device_USB = 1;*/
 #endif
     OscConfig();
     IO_Config();
@@ -166,7 +140,7 @@ void main(void) {
     I2C1_Initialize();
     I2C2_Initialize();
     LCM_Init();
-    initial_LCD();
+
     LINE_12_Initial();
     LINE_12_Write_Default();
 
@@ -176,11 +150,26 @@ void main(void) {
     LCM_SetCursor(1, 0);
     LCM_PutROMString((const uint8_t*) "Son of San,Dick!");
 
+    /*initial_LCD();
     LCD_Set_Cursor(0, 0);
-    LCD_PutROMString((const uint8_t*) "Hello, World");
-    
-    BuzzerAlarm._0 = 1;
+    LCD_PutROMString((const uint8_t*) "Hello, World");*/
+
+    //BuzzerAlarm._0 = 1;
+    I2C_Device.MCP79410 = I2C_Check_Device(SLAVE_I2C1_MCP79410_REG_ADDRESS, I2C1);
+    I2C_Device.MCP4551 = I2C_Check_Device(SLAVE_I2C2_MCP4551_ADDRESS, I2C2);
 #ifndef USING_SIMULATOR
+    if (I2C_Device.MCP79410 == 1) {
+        static uint16_t RETRY = 100, retry_counter = 0;
+        CurrentTime.sec = MCP79410_bcd2dec(MCP79410_Command(RTCSEC, 0x00, Read) & (~START_32KHZ));
+        do {
+            retry_counter++;
+            TimeChanged = CurrentTime.sec;
+            CurrentTime.sec = MCP79410_bcd2dec(MCP79410_Command(RTCSEC, 0x00, Read) & (~START_32KHZ));
+            if (TimeChanged != CurrentTime.sec || I2C_Device.MCP79410 != 1 || retry_counter == RETRY) break;
+            else __delay_ms(10);
+        } while (CurrentTime.sec == TimeChanged);
+    }
+    __delay_ms(10);
     MCP79410_GetTime();
 #endif
     while (1) {
@@ -229,10 +218,21 @@ void IO_Config(void) {
     Buzzer = 0; /*Rated Frequency 2400 ± 200Hz */
 
     /*BT*/
-    TRISDbits.TRISD8 = 1; /*BT1*/
-    TRISAbits.TRISA15 = 1; /*BT2*/
-    TRISDbits.TRISD0 = 1; /*BT3*/
-    TRISDbits.TRISD11 = 1; /*BT4*/
+    TRISDbits.TRISD8 = 1; /*BT2*/
+    TRISAbits.TRISA15 = 1; /*BT3*/
+    TRISDbits.TRISD0 = 1; /*BT4*/
+    TRISDbits.TRISD11 = 1; /*BT5*/
+
+    /*DSW*/
+    TRISAbits.TRISA9 = 1; /*DSW1*/
+    TRISBbits.TRISB8 = 1; /*DSW2*/
+    TRISBbits.TRISB9 = 1; /*DSW3*/
+    TRISBbits.TRISB10 = 1; /*DSW4*/
+    TRISBbits.TRISB11 = 1; /*DSW5*/
+    TRISAbits.TRISA1 = 1; /*DSW6*/
+
+    ANSELA &= 0x7DFD;
+    ANSELB &= 0xF0FF;
 
     __builtin_write_OSCCONL(OSCCON & ~(1 << 6)); // unlock PPS
 
@@ -266,7 +266,9 @@ void Time_Execute(void) {
         _500ms++;
         Check_Button();
 #ifndef USING_SIMULATOR
-        USBDeviceTasks();
+        if (Device_USB == 1) {
+            USBDeviceTasks();
+        }
 #endif
         SEVEN_SEGMENT_SCAN();
         Mission_Execute();
@@ -290,24 +292,24 @@ void Time_Execute(void) {
         if (_500ms >= 500) {
             _500ms = 0x00;
 #ifndef USING_SIMULATOR
-            /*USB*/
-            if ((USBGetDeviceState() < CONFIGURED_STATE) ||
-                    (USBIsDeviceSuspended() == true)) {
-                //Either the device is not configured or we are suspended
-                //  so we don't want to do execute any application code
-                return; //go back to the top of the while loop
-            } else {
-                //Otherwise we are free to run user application code.
-                if (USBUSARTIsTxTrfReady() == true) {
-                    sprintf(CDC_Buffer, "VR1 =0x%02X(DEC:%d),%04d mV; RC:%d \r\n",
-                            VR1, VR1, ADCValues[0], CLOCK.Second);
-                    putsUSBUSART(CDC_Buffer);
+            if (Device_USB == 1) {
+                /*USB*/
+                if ((USBGetDeviceState() < CONFIGURED_STATE) ||
+                        (USBIsDeviceSuspended() == true)) {
+                    //Either the device is not configured or we are suspended
+                    //  so we don't want to do execute any application code
+                    return; //go back to the top of the while loop
+                } else {
+                    //Otherwise we are free to run user application code.
+                    if (USBUSARTIsTxTrfReady() == true) {
+                        sprintf(CDC_Buffer, "VR1 =0x%02X(DEC:%d),%04d mV; RC:%d \r\n",
+                                VR1, VR1, ADCValues[0], CLOCK.Second);
+                        putsUSBUSART(CDC_Buffer);
+                    }
                 }
-
+                CDCTxService();
             }
-            CDCTxService();
 #endif
-
         }
         T1Counter_1ms = 0x00;
     }
@@ -361,7 +363,7 @@ uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits Oper
         .Data7_0 = Data & 0xFF
     };
     uint16_t TimeOut = 0, readData = 0;
-    i2c2_msg_status = I2C2_MESSAGE_PENDING;
+    I2C2_TRANSACTION_REQUEST_BLOCK readTRB[2];
     if (OperationBits != ReadData) {
         if (MemoryAddress == Volatile_Wiper_1) MemoryAddress = Volatile_Wiper_0;
         I2C2_MasterWrite(Command.Byte, 2, SLAVE_I2C2_MCP4551_ADDRESS, &i2c2_msg_status);
@@ -371,7 +373,13 @@ uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits Oper
             } else TimeOut++;
         }
     } else {
-        I2C2_MasterRead(Command.Byte, 1, RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS, &i2c2_msg_status);
+        // Build TRB for sending address
+        I2C2_MasterWriteTRBBuild(readTRB, Command.Byte, 1, SLAVE_I2C2_MCP4551_ADDRESS);
+        // Build TRB for receiving data
+        I2C2_MasterReadTRBBuild(&readTRB[1], RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS);
+
+        I2C2_MasterTRBInsert(2, readTRB, &i2c2_msg_status);
+        //I2C2_MasterRead(Command.Byte, 1, RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS, &i2c2_msg_status);
         TimeOut = 0;
         while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
             if (TimeOut == SLAVE_I2C2_MCP4551_DEVICE_TIMEOUT) {
@@ -426,6 +434,7 @@ void Mission_Execute(void) {
             Nop();
         } else if (TDM.Task == 1) { /*@5ms*/
             if (SetTime&&!SetTime1Shot) {
+                MCP79410_Initialize();
                 BuzzerAlarm._1 = 1;
                 MCP79410_DisableOscillator();
                 MCP79410_SetTime(&CurrentTime);
@@ -573,7 +582,7 @@ void Check_Button(void) {
 
 }
 
-void Debounce_Execute(uint8_t Input, DebounceSW Switch) {
+void Debounce_Execute(uint16_t Input, DebounceSW Switch) {
     uint16_t* Output;
     uint8_t Bit_On, Bit_Off;
     if (Switch >= bt2 && Switch <= bt5) {
@@ -772,6 +781,40 @@ void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
     }
 }
 
+uint8_t I2C_Check_Device(uint8_t ADDRESS, i2c_modules MODULES) {
+    uint16_t timeout = 0;
+    if (MODULES == I2C1) {
+        I2C1_MasterWrite(0x00, 0x00, ADDRESS, &i2c1_msg_status);
+        while (i2c1_msg_status == I2C1_MESSAGE_PENDING) {
+            if (timeout == MAX_TRY) {
+                return 0;
+            } else {
+                ++timeout;
+            }
+        }
+        if (i2c1_msg_status == I2C1_MESSAGE_COMPLETE) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else if (MODULES == I2C2) {
+        I2C2_MasterWrite(0x00, 0x00, ADDRESS, &i2c2_msg_status);
+        while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
+            if (timeout == MAX_TRY) {
+                return 0;
+            } else {
+                ++timeout;
+            }
+        }
+        if (i2c2_msg_status == I2C2_MESSAGE_COMPLETE) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+    return 0;
+}
+
 void initial_LCD(void) {
     I2C_LCD.BL = I2C_STATUS.Enale = 1;
     if (I2C_STATUS.Enale) {
@@ -817,7 +860,7 @@ void LCD_WriteInstruction(uint8_t Instruction) {
     uint16_t TimeOut;
     I2C_LCD.RS = 0;
     I2C_LCD.RW = 0;
-    I2C_ADRRESS.Address = 0x27;
+    I2C_ADRRESS.Address = SLAVE_I2C_LCD_ADDRESS;
     I2C_ADRRESS.R_nW = 0;
     length = 2;
     if (!I2C_STATUS._4bit) {
@@ -856,7 +899,7 @@ void LCD_WriteData(uint8_t DATA) {
     uint16_t slaveTimeOut;
     I2C_LCD.RS = 1;
     I2C_LCD.RW = 0;
-    I2C_ADRRESS.Address = 0x27;
+    I2C_ADRRESS.Address = SLAVE_I2C_LCD_ADDRESS;
     I2C_ADRRESS.R_nW = 0;
     length = 4;
     I2C_LCD.D7_D4 = ((DATA & 0xF0) >> 4) &0x0F;

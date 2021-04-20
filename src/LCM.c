@@ -138,7 +138,7 @@ void LCM_Init(void) {
 
     IntLCM_Communication(0x03); // Reset
 #ifndef USING_SIMULATOR
-    __delay_ms(4.1); // Wait 4.1 mSecs
+    __delay_us(4100); // Wait 4.1 mSecs
 #endif
 
     IntLCM_Communication(0x03); // Reset
@@ -171,7 +171,7 @@ void LCM_Init(void) {
     IntLCM_Communication((Disp_Clear >> 4) & 0x0f); // Dsplay Clear
     IntLCM_Communication(Disp_Clear & 0xf);
 #ifndef USING_SIMULATOR
-    __delay_ms(1.52);
+    __delay_us(1520);
 #endif
 
     IntLCM_Communication((Disp_Entry_Inc >> 4) & 0x0f); // Entry Mode

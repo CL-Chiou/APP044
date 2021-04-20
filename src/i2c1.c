@@ -15,7 +15,7 @@
     This header file provides APIs for driver for i2c1.
     Generation Information :
         Product Revision  :  PIC24 / dsPIC33 / PIC32MM MCUs - 1.165.0
-        Device            :  dsPIC33EP512MU810
+        I2C_Device            :  dsPIC33EP512MU810
 
     The generated drivers are tested against the following:
         Compiler          :  XC16 v1.41
@@ -521,8 +521,29 @@ static void I2C1_FunctionComplete(void) {
 }
 
 static void I2C1_Stop(I2C1_MESSAGE_STATUS completion_code) {
+    extern union _i2c_address I2C_ADRRESS;
+    extern union _i2c_device I2C_Device;
     // then send a stop
     I2C1_STOP_CONDITION_ENABLE_BIT = 1;
+    if (completion_code != I2C1_MESSAGE_COMPLETE) {
+        switch (I2C_ADRRESS.Address) {
+            case SLAVE_I2C_LCD_ADDRESS:
+                I2C_Device.LCD = 0;
+                break;
+            case SLAVE_I2C_RPB1600_ADDRESS:
+                I2C_Device.RPB1600 = 0;
+                break;
+            case SLAVE_I2C1_MCP79410_REG_ADDRESS:
+            case SLAVE_I2C1_MCP79410_EEPROM_ADDRESS:
+                I2C_Device.MCP79410 = 0;
+                break;
+            case SLAVE_I2C2_MCP4551_ADDRESS:
+                I2C_Device.MCP4551 = 0;
+                break;
+            default:
+                break;
+        }
+    }
 
     // make sure the flag pointer is not NULL
     if (p_i2c1_current->pTrFlag != NULL) {
