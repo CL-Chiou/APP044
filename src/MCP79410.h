@@ -30,7 +30,7 @@
 typedef enum {
     Write,
     Read
-} I2CnW_R;
+} I2CnWR_t;
 
 typedef enum {
     /*Section 5.3 “Timekeeping”*/
@@ -71,10 +71,10 @@ typedef enum {
     PWRUPDATE,
     PWRUPMTH
 
-} rtcc_registerbits;
+} RTCCRegisterbits_t;
 
 /*MCP79410*/
-typedef struct _RTCC_Struct {
+typedef struct xRTCC {
     uint8_t sec;
     uint8_t min;
     uint8_t hour;
@@ -82,29 +82,29 @@ typedef struct _RTCC_Struct {
     uint8_t date;
     uint8_t month;
     uint8_t year;
-} RTCC_Struct;
+} RTCC_t;
 
-typedef enum Alarm {
+typedef enum xAlarm {
     ZERO,
     ONE
 } Alarm_t;
 
-typedef enum AlarmStatus {
+typedef enum xAlarmStatus {
     NOT_SET,
     SET
 } AlarmStatus_t;
 
-typedef enum PMAM {
+typedef enum xPMAM {
     AMT,
     PMT
 } PMAM_t;
 
-typedef enum Format {
+typedef enum xFormat {
     H24,
     H12
 } Format_t;
 
-typedef enum Match {
+typedef enum xMatch {
     SECONDS_MATCH,
     MINUTES_MATCH,
     HOURS_MATCH,
@@ -113,13 +113,13 @@ typedef enum Match {
     FULL_DATE_MATCH
 } Match_t;
 
-typedef enum MFP_MODE {
+typedef enum xMFP_MODE {
     GPO,
     ALARM_INTERRUPT,
     SQUARE_WAVE
 } MFP_t;
 
-typedef enum MFP_POL {
+typedef enum xMFP_POL {
     LOWPOL,
     HIGHPOL
 } Polarity_t;
@@ -174,7 +174,7 @@ void MCP79410_DisableOscillator(void);
 uint8_t MCP79410_IsRunning(void);
 
 void MCP79410_GetTime(void);
-void MCP79410_SetTime(RTCC_Struct *time);
+void MCP79410_SetTime(RTCC_t *time);
 void MCP79410_SetHourFormat(Format_t format);
 void MCP79410_SetPMAM(PMAM_t meridian);
 
@@ -182,7 +182,7 @@ void MCP79410_EnableAlarm(Alarm_t alarm);
 void MCP79410_DisableAlarm(Alarm_t alarm);
 AlarmStatus_t MCP79410_GetAlarmStatus(Alarm_t alarm);
 void MCP79410_ClearInterruptFlag(Alarm_t alarm);
-void MCP79410_SetAlarmTime(RTCC_Struct *time, Alarm_t alarm);
+void MCP79410_SetAlarmTime(RTCC_t *time, Alarm_t alarm);
 void MCP79410_SetAlarmMFPPolarity(Polarity_t MFP_pol, Alarm_t alarm);
 void MCP79410_SetAlarmMatch(Match_t match, Alarm_t alarm);
 void MCP79410_SetMFP_Functionality(MFP_t mode);
@@ -192,12 +192,12 @@ uint8_t MCP79410_CheckPowerFailure(void);
 uint8_t MCP79410_IsVbatEnabled(void);
 void MCP79410_EnableVbat(void);
 void MCP79410_DisableVbat(void);
-RTCC_Struct* MCP79410_GetPowerUpTime(void);
-RTCC_Struct* MCP79410_GetPowerDownTime(void);
+RTCC_t* MCP79410_GetPowerUpTime(void);
+RTCC_t* MCP79410_GetPowerDownTime(void);
 
 uint8_t MCP79410_dec2bcd(uint8_t num);
 uint8_t MCP79410_bcd2dec(uint8_t num);
-uint16_t MCP79410_Command(rtcc_registerbits MemoryAddress, uint8_t data, I2CnW_R nW_R);
+uint16_t MCP79410_Command(RTCCRegisterbits_t MemoryAddress, uint8_t data, I2CnWR_t nW_R);
 
 void MCP79410_EnableVbat(void);
 

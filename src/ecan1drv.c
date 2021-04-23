@@ -78,7 +78,7 @@ void Ecan1WriteRxAcptFilter(int16_t n, int32_t identifier, uint16_t exide, uint1
     uint32_t sid10_0 = 0;
     uint32_t eid15_0 = 0;
     uint32_t eid17_16 = 0;
-    
+
     uint16_t *sidRegAddr;
     uint16_t *bufPntRegAddr;
     uint16_t *maskSelRegAddr;

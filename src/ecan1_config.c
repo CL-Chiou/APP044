@@ -48,7 +48,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "common.h"
 
 /******************************************************************************
- * Function:      void DMA5Init(void)
+ * Function:      void DMA5_Initialize(void)
  *
  * PreCondition:  None
  *
@@ -64,9 +64,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
  *                MODE: Continuous, Ping-Pong modes disabled
  *                IRQ: ECAN1 Transmit Interrupt
  *****************************************************************************/
-void DMA5Init(void) {
+void DMA5_Initialize(void) {
     DMA5CON = 0x2020;
-    DMA5PAD = (volatile unsigned int) &C1TXD; /* ECAN 1 (C1TXD) */
+    DMA5PAD = (volatile uint16_t) &C1TXD; /* ECAN 1 (C1TXD) */
     DMA5CNT = 0x0007;
     DMA5REQ = 0x0046; /* ECAN 1 Transmit */
 
@@ -77,7 +77,7 @@ void DMA5Init(void) {
 }
 
 /******************************************************************************
- * Function:      void DMA6Init(void)
+ * Function:      void DMA6_Initialize(void)
  *
  * PreCondition:  None
  *
@@ -93,9 +93,9 @@ void DMA5Init(void) {
  *                MODE: Continuous, Ping-Pong modes disabled
  *                IRQ: ECAN1 Transmit Interrupt
  *****************************************************************************/
-void DMA6Init(void) {
+void DMA6_Initialize(void) {
     DMA6CON = 0x0020;
-    DMA6PAD = (volatile unsigned int) &C1RXD; /* ECAN 1 (C1RXD) */
+    DMA6PAD = (volatile uint16_t) &C1RXD; /* ECAN 1 (C1RXD) */
     DMA6CNT = 0x0007;
     DMA6REQ = 0x0022; /* ECAN 1 Receive */
 
@@ -158,7 +158,7 @@ void Ecan1ClkInit(void) {
 }
 
 /******************************************************************************
- * Function:     void Ecan1Init(void)
+ * Function:     void ECAN1_Initialize(void)
  *
  * PreCondition:  None
  *
@@ -173,7 +173,7 @@ void Ecan1ClkInit(void) {
  *                buffers, and the acceptance filters and
  *                setting appropriate masks for the same.
  *****************************************************************************/
-void Ecan1Init(void) {
+void ECAN1_Initialize(void) {
     /* Request Configuration Mode */
     C1CTRL1bits.REQOP = 4;
     while (C1CTRL1bits.OPMODE != 4);
@@ -187,7 +187,7 @@ void Ecan1Init(void) {
 
     /*	Filter Configuration
 
-    Ecan1WriteRxAcptFilter(int n, long identifier, unsigned int exide,unsigned int bufPnt,unsigned int maskSel)
+    Ecan1WriteRxAcptFilter(int n, long identifier, uint16_t exide,uint16_t bufPnt,uint16_t maskSel)
 
     n = 0 to 15 -> Filter number
 
@@ -206,11 +206,11 @@ void Ecan1Init(void) {
     
      */
 
-    Ecan1WriteRxAcptFilter(5, RCVx_ID, 1, 04, 0); // Filter 5
-    Ecan1WriteRxAcptFilter(6, EXT_TRIGGER_ID, 1, 06, 1); // Filter 6
-    Ecan1WriteRxAcptFilter(9, RCVy_ID, 1, 07, 2); // Filter 9
+    Ecan1WriteRxAcptFilter(5, CANRX_ID_1, 1, 04, 0); // Filter 5
+    Ecan1WriteRxAcptFilter(6, CANTX_ID_TRIGGER, 1, 06, 1); // Filter 6
+    Ecan1WriteRxAcptFilter(9, CANRX_ID_2, 1, 07, 2); // Filter 9
     /*    Mask Configuration
-    Ecan1WriteRxAcptMask(int m, long identifierMask, unsigned int mide, unsigned int exide)
+    Ecan1WriteRxAcptMask(int m, long identifierMask, uint16_t mide, uint16_t exide)
     m = 0 to 2 -> Mask Number
     identifier -> SID <10:0> : EID <17:0> 
     mide = 0 -> Match either standard or extended address message if filters match 
@@ -245,8 +245,8 @@ void Ecan1Init(void) {
     C1INTEbits.TBIE = 1;
     C1INTEbits.RBIE = 1;
 
-    DMA5Init();
-    DMA6Init();
+    DMA5_Initialize();
+    DMA6_Initialize();
 }
 
 void __attribute__((interrupt, no_auto_psv)) _DMA5Interrupt(void) {

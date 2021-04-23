@@ -13,12 +13,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
  - 7段顯示器報時與RTCC實際時間的誤差最小化
  - I2C連線與斷線判斷
 
-### 臭蟲修復
+### 問題修復
 - LCM不顯示問題
 
 [0.0.2] - 2021-04-15
 ---
-### 臭蟲修復
+### 問題修復
 - 修復傳送與接收RTCC當前時間的封包資料錯位問題 (resolved [#4])
 
 [0.0.1] - 2021-04-09
@@ -86,7 +86,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### 移除功能
 - None
 
-### 臭蟲修復
+### 問題修復
 - None
 
 ### 安全性更新 

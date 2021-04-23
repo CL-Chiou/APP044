@@ -6,7 +6,6 @@
  */
 
 
-#include <xc.h>
 #include "Common.h"
 
 #define LCM_RS LATGbits.LATG15
@@ -47,8 +46,8 @@ void LCM_IOSetup(void) {
     LCM_D7 = 0;
 }
 
-void IntLCM_Communication(unsigned char NibbleByte) {
-    unsigned char Temporary;
+void IntLCM_Communication(uint8_t NibbleByte) {
+    uint8_t Temporary;
     //Temporary = NibbleByte & 0x0f;
 #ifndef USING_SIMULATOR
     __delay_us(1); // tAS
@@ -86,10 +85,10 @@ void IntLCM_Communication(unsigned char NibbleByte) {
 #endif
 }
 
-unsigned char LCM_IsBusy(void) {
+uint8_t LCM_IsBusy(void) {
 
     /*
-        unsigned char Temporary;
+        uint8_t Temporary;
 
         PMPSetAddress( LCM_INSTRUCTION );
         Temporary = mPMPMasterReadByte( );		// Dummy Read for trigger PMP active.
@@ -102,13 +101,13 @@ unsigned char LCM_IsBusy(void) {
         return ( ( Temporary >> 7 ) & 0x01 ); 
      */
 
-    unsigned int i;
+    uint16_t i;
 
     for (i = 0; i < 500; i++);
     return 0;
 }
 
-void IntLCM_WriteData(unsigned char Data) {
+void IntLCM_WriteData(uint8_t Data) {
 #ifndef USING_SIMULATOR
     while (LCM_IsBusy());
 #endif
@@ -119,7 +118,7 @@ void IntLCM_WriteData(unsigned char Data) {
     IntLCM_Communication(Data & 0x0f);
 }
 
-void IntLCM_WriteInstruction(unsigned char Instruction) {
+void IntLCM_WriteInstruction(uint8_t Instruction) {
 #ifndef USING_SIMULATOR
     while (LCM_IsBusy());
 #endif
@@ -130,7 +129,7 @@ void IntLCM_WriteInstruction(unsigned char Instruction) {
     IntLCM_Communication(Instruction & 0x0f);
 }
 
-void LCM_Init(void) {
+void LCM_Initialize(void) {
     LCM_IOSetup();
 
     LCM_RS = 0; // RS = 0 , Instruction
@@ -187,16 +186,16 @@ void LCM_Init(void) {
 #endif
 }
 
-void LCM_SetCursor(unsigned char Y, unsigned char X) {
+void LCM_SetCursor(uint8_t Y, uint8_t X) {
     IntLCM_WriteInstruction((0x80 + (Y * 0x40) + X));
 }
 
-void LCM_PutASCII(unsigned char Ascii) {
+void LCM_PutASCII(uint8_t Ascii) {
     IntLCM_WriteData(Ascii);
 }
 
-void LCM_PutHex(unsigned char Hex) {
-    unsigned char Temporary;
+void LCM_PutHex(uint8_t Hex) {
+    uint8_t Temporary;
 
     Temporary = (Hex >> 4) & 0x0f;
 
@@ -214,19 +213,19 @@ void LCM_PutHex(unsigned char Hex) {
     IntLCM_WriteData(Temporary);
 }
 
-void LCM_PutROMString(const unsigned char *String) {
+void LCM_PutROMString(const uint8_t *String) {
     while (*String != 0x00)
         IntLCM_WriteData(*String++);
 }
 
-void LCM_PutRAMString(unsigned char *String) {
+void LCM_PutRAMString(uint8_t *String) {
     while (*String != 0x00)
         IntLCM_WriteData(*String++);
 }
 
-static unsigned char Disable_Zero = 1;
+static uint8_t Disable_Zero = 1;
 
-unsigned char LCM_BCD_Regulate(unsigned char BCD) {
+uint8_t LCM_BCD_Regulate(uint8_t BCD) {
     if (BCD == 0) {
         if (Disable_Zero == 1)
             return ' ';
@@ -238,8 +237,8 @@ unsigned char LCM_BCD_Regulate(unsigned char BCD) {
     }
 }
 
-void LCM_PutNumber(unsigned int Number, unsigned char Digit) {
-    unsigned char Temporary;
+void LCM_PutNumber(uint16_t Number, uint8_t Digit) {
+    uint8_t Temporary;
     Disable_Zero = 1;
 
     switch (Digit) {

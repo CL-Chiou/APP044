@@ -9,18 +9,23 @@
 #include <xc.h>
 #include "Common.h"
 
-extern struct _flag FLAG;
-extern struct _clock CLOCK;
+extern TimeFlag_t FLAG;
+extern RealTimeClock_t CLOCK;
 
-unsigned int T1Counter, T1Counter_1ms, T1Counter_1000ms;
+uint16_t T1Cnt, T1Cnt_1ms, T1Cnt_1000ms;
+uint8_t T1Cnt_RLED_Period;
+
+/*LED*/
+extern uint8_t LED2Blink, LED2BlinkDuty;
 /*ADC*/
-extern int VR1;
 extern int ADCValues[8];
 /*USB CDC*/
-extern char CDC_Buffer[64];
+extern uint8_t CDCSendBuffer[64];
 /*Buzzer*/
-extern unsigned char BuzzerTimeCNT;
-extern unsigned char BuzzerFlag;
+extern uint8_t BzTCnt;
+extern uint8_t BzOutput;
+/*RTC*/
+extern uint8_t rtccSecondChanged, rtccReadFailure;
 
 void CAN_Send_VR1_Message(void);
 
@@ -28,28 +33,43 @@ void CAN_Send_VR1_Message(void);
 void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt(void) {
     /* Interrupt Service Routine code goes here */
     IFS0bits.T1IF = 0; //Clear Timer1 interrupt flag
-    T1Counter++;
-    T1Counter_1ms++;
-    BuzzerTimeCNT++;
-    if (T1Counter >= 10000) {
-        T1Counter = 0;
-        T1Counter_1000ms++;
-        LED_Toggle(LED_D1);
-        if (T1Counter_1000ms >= 2) {
-            T1Counter_1000ms = 0;
-            FLAG.Second = 1;
+    T1Cnt++;
+    T1Cnt_1ms++;
+    T1Cnt_RLED_Period++;
+    BzTCnt++;
+    if (T1Cnt >= 10000) {
+        T1Cnt = 0;
+        T1Cnt_1000ms++;
+        if (T1Cnt_1000ms >= 2) {
+            T1Cnt_1000ms = 0;
+            LED2Blink = 1;
         }
     }
-    if (BuzzerTimeCNT <= 4 && BuzzerFlag) Buzzer = 1;
+    if (rtccSecondChanged == 1 || rtccReadFailure == 1) {
+        static uint16_t rtccSecondChangedCnt = 0;
+        if (rtccSecondChangedCnt >= 20000) {
+            FLAG.Second = 1;
+            rtccSecondChangedCnt = 0;
+        } else {
+            rtccSecondChangedCnt++;
+        }
+    }
+    if (T1Cnt_RLED_Period >= 100) T1Cnt_RLED_Period = 0;
+    if (T1Cnt_RLED_Period <= LED2BlinkDuty) {
+        LEDTurnOn(LED_D2);
+    } else {
+        LEDTurnOff(LED_D2);
+    }
+    if (BzTCnt <= 4 && BzOutput) Buzzer = 1;
     else Buzzer = 0;
-    if (BuzzerTimeCNT >= 8) BuzzerTimeCNT = 0;
+    if (BzTCnt >= 8) BzTCnt = 0;
 }
 
 void __attribute__((__interrupt__, no_auto_psv)) _T3Interrupt(void) {
     IFS0bits.T3IF = 0;
 }
 
-void Timer1_Initial(void) { //20kHz
+void Timer1_Initialize(void) { //20kHz
     T1CONbits.TCKPS = 0b00; //00 = 1:1
     T1CONbits.TCS = 0; //0 = Internal clock (FP)
     TMR1 = 0x00; // Clear timer register
@@ -58,14 +78,22 @@ void Timer1_Initial(void) { //20kHz
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
     IEC0bits.T1IE = 1; // Enable Timer1 interrupt
     T1CONbits.TON = 1; //1 = Starts 16-bit Timer1
-
 }
 
-void Timer3_Initial(void) { //1kHz
+void Timer3_Initialize(void) {
+#ifdef USING_SIMULATOR 
+    /*2.5Hz*/
+    T3CONbits.TCKPS = 0b11; //01 = 1:256
+    T3CONbits.TCS = 0;
+    TMR3 = 0x00;
+    PR3 = 62500;
+#else
+    /*1kHz*/
     T3CONbits.TCKPS = 0b01; //01 = 1:8
     T3CONbits.TCS = 0;
     TMR3 = 0x00;
     PR3 = 5000;
+#endif
     IPC2bits.T3IP = 0x01; // Set Timer3 Interrupt Priority Level
     IFS0bits.T3IF = 0; // Clear Timer3 Interrupt Flag
     IEC0bits.T3IE = 0;

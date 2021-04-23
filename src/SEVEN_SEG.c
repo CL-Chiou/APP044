@@ -54,12 +54,12 @@
 #define     DIR_SEGMENT_2DOT    TRISCbits.TRISC14
 
 
-unsigned char FIRST_LINE_Data[6];
-unsigned char SECOND_LINE_Data[6];
-unsigned int ScanDigit = 1;
-const unsigned char SEVEN_SEG_PATTERN[16] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00};
+uint8_t FirstLineData[6];
+uint8_t SecondLineData[6];
+uint16_t ScanDigit = 1;
+const uint8_t SevenSegPattern[16] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00};
 
-volatile unsigned int Scan_Index = 0;
+volatile uint16_t Scan_Index = 0;
 
 union SEGMENT_Template {
 
@@ -73,10 +73,10 @@ union SEGMENT_Template {
         unsigned SEG_G : 1;
         unsigned SEG_DOT : 1;
     };
-    unsigned char Byte_Val;
+    uint8_t Byte_Val;
 } SEGMENT_Data;
 
-void LINE_12_Initial(void) {
+void LINE_12_Initialize(void) {
     DIR_SEGMENT_1A = 0;
     DIR_SEGMENT_1B = 0;
     DIR_SEGMENT_1C = 0;
@@ -102,9 +102,11 @@ void LINE_12_Initial(void) {
     DIR_COMMON_4 = 0;
     DIR_COMMON_5 = 0;
     DIR_COMMON_6 = 0;
+
+    LINE_12_Write_Default();
 }
 
-void SEVEN_SEGMENT_SCAN(void) {
+void Scan7Segment(void) {
     COMMON_1 = 0;
     COMMON_2 = 0;
     COMMON_3 = 0;
@@ -112,7 +114,7 @@ void SEVEN_SEGMENT_SCAN(void) {
     COMMON_5 = 0;
     COMMON_6 = 0;
 
-    SEGMENT_Data.Byte_Val = FIRST_LINE_Data[Scan_Index];
+    SEGMENT_Data.Byte_Val = FirstLineData[Scan_Index];
     if (SEGMENT_Data.SEG_A) SEGMENT_1A = 1;
     else SEGMENT_1A = 0;
     if (SEGMENT_Data.SEG_B) SEGMENT_1B = 1;
@@ -137,7 +139,7 @@ void SEVEN_SEGMENT_SCAN(void) {
     //  Write scan data for 2nd line
     //  *******************************
 
-    SEGMENT_Data.Byte_Val = SECOND_LINE_Data[Scan_Index];
+    SEGMENT_Data.Byte_Val = SecondLineData[Scan_Index];
     if (SEGMENT_Data.SEG_A) SEGMENT_2A = 1;
     else SEGMENT_2A = 0;
     if (SEGMENT_Data.SEG_B) SEGMENT_2B = 1;
@@ -181,17 +183,17 @@ void SEVEN_SEGMENT_SCAN(void) {
 }
 
 void LINE_12_Write_Default(void) {
-    FIRST_LINE_Data[0] = SEVEN_SEG_PATTERN[10];
-    FIRST_LINE_Data[1] = SEVEN_SEG_PATTERN[10];
-    FIRST_LINE_Data[2] = SEVEN_SEG_PATTERN[10];
-    FIRST_LINE_Data[3] = SEVEN_SEG_PATTERN[10];
-    FIRST_LINE_Data[4] = SEVEN_SEG_PATTERN[10];
-    FIRST_LINE_Data[5] = SEVEN_SEG_PATTERN[10];
+    FirstLineData[0] = SevenSegPattern[10];
+    FirstLineData[1] = SevenSegPattern[10];
+    FirstLineData[2] = SevenSegPattern[10];
+    FirstLineData[3] = SevenSegPattern[10];
+    FirstLineData[4] = SevenSegPattern[10];
+    FirstLineData[5] = SevenSegPattern[10];
 
-    SECOND_LINE_Data[0] = SEVEN_SEG_PATTERN[10];
-    SECOND_LINE_Data[1] = SEVEN_SEG_PATTERN[10];
-    SECOND_LINE_Data[2] = SEVEN_SEG_PATTERN[10];
-    SECOND_LINE_Data[3] = SEVEN_SEG_PATTERN[10];
-    SECOND_LINE_Data[4] = SEVEN_SEG_PATTERN[10];
-    SECOND_LINE_Data[5] = SEVEN_SEG_PATTERN[10];
+    SecondLineData[0] = SevenSegPattern[10];
+    SecondLineData[1] = SevenSegPattern[10];
+    SecondLineData[2] = SevenSegPattern[10];
+    SecondLineData[3] = SevenSegPattern[10];
+    SecondLineData[4] = SevenSegPattern[10];
+    SecondLineData[5] = SevenSegPattern[10];
 }

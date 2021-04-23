@@ -17,6 +17,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "LCM.h"
 #include "SEVEN_SEG.h"
 #include "Timers.h"
@@ -32,16 +33,19 @@ extern "C" {
 #include "pwm.h"
 #include "time.h"
 #include "MCP79410.h"
+#include "MCP4551.h"
+#include "MCP4922.h"
 
     /* check if build is for a real debug tool */
 #ifdef __MPLAB_DEBUGGER_SIMULATOR
-#warning Debug with broken MPLAB simulator
 #define USING_SIMULATOR
 #endif
 
-#define UART1_BAUDRATE 115200
-#define UART1_BRP_VAL ((FCY/UART1_BAUDRATE)/4)-1
-    /* CAN1 Baud Rate Configuration         */
+    /*UART1*/
+#define U1TX_MSG_BUF_LENGTH 24
+#define U1BAUDRATE 115200
+#define U1BRP_VAL ((FCY/U1BAUDRATE)/4)-1
+    /* CAN1 Baud Rate Configuration */
 #define CAN1_BITRATE 500000
 #define NTQ     20  // 20 Time Quanta in a Bit Time
 #define CAN1_BRP_VAL ( (FCY / (2 * NTQ * CAN1_BITRATE)) - 1 )
@@ -54,7 +58,7 @@ extern "C" {
     //#define adc2volt_3_3V(ADC_Value)    (ADC_Value*825L+512)/1024
 
     /*Vref+ = Vdd = 3.3V : 1023*/
-#define adc2volt_3_3V(ADC_Value)    ADC_Value*4-(ADC_Value*3171L+2048)/4096
+#define adc2volt_3_3V(adcvalue)    adcvalue*4-(adcvalue*3171L+2048)/4096  
 
     /*LED*/
 #define LED1 LATAbits.LATA5
@@ -67,6 +71,20 @@ extern "C" {
 #define DIR_LED3 TRISAbits.TRISA3
 #define DIR_LED4 TRISAbits.TRISA2
 
+    /*BT*/
+#define BT2 !PORTDbits.RD8 /*BT2*/
+#define BT3 !PORTAbits.RA15 /*BT3*/
+#define BT4 !PORTDbits.RD0 /*BT4*/
+#define BT5 !PORTDbits.RD11 /*BT5*/
+
+    /*SW-DIP*/
+#define DSW1 !PORTAbits.RA9 /*DSW1*/
+#define DSW2 !PORTBbits.RB8 /*DSW2*/
+#define DSW3 !PORTBbits.RB9 /*DSW3*/
+#define DSW4 !PORTBbits.RB10 /*DSW4*/
+#define DSW5 !PORTBbits.RB11 /*DSW5*/
+#define DSW6 !PORTAbits.RA1 /*DSW6*/
+
     /*Buzzer*/
 #define Buzzer LATGbits.LATG13
 
@@ -74,42 +92,57 @@ extern "C" {
 #define nLDAC LATDbits.LATD14
 #define nSS LATDbits.LATD15
 
-    /*UART1*/
-#define UART1_BUFFER_SIZE 24
+    /* Display ON/OFF Control defines */
+#define LCD_DON                     0b00001111  /* Display on      */
+#define LCD_DOFF                    0b00001011  /* Display off     */
+#define LCD_CURSOR_ON               0b00001111  /* Cursor on       */
+#define LCD_CURSOR_OFF              0b00001101  /* Cursor off      */
+#define LCD_BLINK_ON                0b00001111  /* Cursor Blink    */
+#define LCD_BLINK_OFF               0b00001110  /* Cursor No Blink */
+#define LCD_BLINK_OFF_CURSOR_OFF    0b00001100  /* Cursor No Blink, Cursor off */
+#define LCD_RETURN_HOME             0b00000001  /* Sets DDRAM address 0 in address counter */
 
-    /*I2C*/
-#define MAX_TRY 500
+    /* Cursor or Display Shift defines */
+#define LCD_SHIFT_CUR_LEFT          0b00000100  /* Cursor shifts to the left   */
+#define LCD_SHIFT_CUR_RIGHT         0b00000101  /* Cursor shifts to the right  */
+#define LCD_SHIFT_DISP_LEFT         0b00000110  /* Display shifts to the left  */
+#define LCD_SHIFT_DISP_RIGHT        0b00000111  /* Display shifts to the right */
+
+    /* Function Set defines */
+#define LCD_FOUR_BIT                0b00101100  /* 4-bit Interface               */
+#define LCD_EIGHT_BIT               0b00111100  /* 8-bit Interface               */
+#define LCD_LINE_5X7                0b00110000  /* 5x7 characters, single line   */
+#define LCD_LINE_5X10               0b00110100  /* 5x10 characters               */
+#define LCD_LINES_5X7               0b00111000  /* 5x7 characters, multiple line */
+
+    /*I2C Address*/
+#define I2C_MAX_TRY 500
 #define SLAVE_I2C_RPB1600_ADDRESS 0x47
 #define SLAVE_I2C_LCD_ADDRESS 0x27
-    /*RTCC Register/SRAM Control Byte*/
-#define SLAVE_I2C1_MCP79410_REG_ADDRESS 0x6F /*MCP79410 ‘1101 111’b*/
-    /*EEPROM Control Byte*/
-#define SLAVE_I2C1_MCP79410_EEPROM_ADDRESS 0x57 /*MCP79410 ‘1010 111’b*/
+#define SLAVE_I2C1_MCP79410_REG_ADDRESS 0x6F /*MCP79410 ‘1101 111’b </RTCC Register/SRAM Control Byte>*/  
+#define SLAVE_I2C1_MCP79410_EEPROM_ADDRESS 0x57 /*MCP79410 ‘1010 111’b </EEPROM Control Byte>*/
 #define SLAVE_I2C2_MCP4551_ADDRESS 0x2E /*MCP45X1 ‘0101 11’b + A0*/
 
     /*I2C1*/
 #define SLAVE_I2C1_DEVICE_TIMEOUT 1500
-#define SLAVE_I2C1_MCP79410_DEVICE_TIMEOUT 1500   // define slave timeout 
-#define MCP79410_RETRY_MAX 500
 
     /*I2C2*/
 #define SLAVE_I2C2_DEVICE_TIMEOUT 1500
-    /*MCP4551-103E/XX: 10 kOhm, 8-LD Device*/
-#define SLAVE_I2C2_MCP4551_DEVICE_TIMEOUT 1500   // define slave timeout 
+    /*Single Nonvolatile 8-bit Potentiometer*/
 
     /*ECAN1*/
-#define EXT_20MS_ID  0x400
-#define EXT_100MS_ID  0x405
-#define EXT_500MS_ID    0x200
-#define EXT_TRIGGER_ID    0x18ABCDEF
-#define RCVx_ID 0x40
-#define RCVy_ID 0x30
+#define CANTX_ID_20MS 0x400
+#define CANTX_ID_100MS 0x405
+#define CANTX_ID_500MS 0x200
+#define CANTX_ID_TRIGGER 0x18ABCDEF
+#define CANRX_ID_1 0x40
+#define CANRX_ID_2 0x30
 #define ECAN1_MSG_BUF_LENGTH 32
-    typedef uint16_t ECAN1MSGBUF[ECAN1_MSG_BUF_LENGTH][8];
-    __eds__ extern ECAN1MSGBUF ecan1msgBuf
+    typedef uint16_t ECAN1MessageBuffer_t[ECAN1_MSG_BUF_LENGTH][8];
+    __eds__ extern ECAN1MessageBuffer_t ecan1msgBuf
     __attribute__((space(eds), aligned(ECAN1_MSG_BUF_LENGTH * 16)));
 
-    extern struct _switch {
+    typedef struct xSwitchItem {
 
         union {
 
@@ -119,7 +152,7 @@ extern "C" {
                 unsigned _BT4 : 1;
                 unsigned _BT5 : 1;
             } TACT;
-            uint8_t _TACT;
+            uint8_t bTACT;
         };
 
         union {
@@ -132,44 +165,24 @@ extern "C" {
                 unsigned _DSW5 : 1;
                 unsigned _DSW6 : 1;
             } DIP;
-            uint8_t _DIP;
+            uint8_t bDIP;
         };
-    } SW, _SW;
+    } SwitchItem_t;
 
-    extern struct _tdm {
-        unsigned Job : 3;
-        unsigned Task : 3;
-    } TDM; // Time-Division Multiplexing
-
-    extern union _mission {
-
-        struct {
-            unsigned _0Job : 1;
-            unsigned _1Job : 1;
-            unsigned _2Job : 1;
-            unsigned _3Job : 1;
-            unsigned _4Job : 1;
-            unsigned _TxJob : 1;
-            unsigned : 2;
-        };
-        uint8_t Jobs;
-    } Mission; // Time-Division Multiplexing
-
-    extern struct _flag {
+    typedef struct xTimeFlag {
         unsigned Second : 1;
-    } FLAG;
+    } TimeFlag_t;
 
-    extern struct _buzzeralarm {
+    typedef struct xBuzzerMode {
         unsigned _0 : 1; //on 50ms off 50ms 5shot
         unsigned _1 : 1; //on 150ms off 50ms 2shot
         unsigned _2 : 1;
         unsigned _3 : 1;
         unsigned _4 : 1;
-        unsigned Oneshot : 1;
-        unsigned : 2;
-    } BuzzerAlarm;
+        unsigned : 3;
+    } BuzzerMode_t;
 
-    extern struct _clock {
+    typedef struct xRealTimeClock {
         uint8_t Year;
         uint8_t Month;
         uint8_t Date;
@@ -177,9 +190,9 @@ extern "C" {
         uint8_t Hour;
         uint8_t Minute;
         uint8_t Second;
-    } CLOCK;
+    } RealTimeClock_t;
 
-    extern struct _frame_buffer { /*The argument to the aligned attribute must be a power of two.*/
+    typedef struct xCANDataFrame { /*The argument to the aligned attribute must be a power of two.*/
 
         union {
 
@@ -203,32 +216,32 @@ extern "C" {
         union {
 
             struct {
-                uint16_t DataWord0;
-                uint16_t DataWord1;
-                uint16_t DataWord2;
-                uint16_t DataWord3;
+                uint16_t wordData0;
+                uint16_t wordData1;
+                uint16_t wordData2;
+                uint16_t wordData3;
 
             };
 
             struct {
-                uint8_t Byte0;
-                uint8_t Byte1;
-                uint8_t Byte2;
-                uint8_t Byte3;
-                uint8_t Byte4;
-                uint8_t Byte5;
-                uint8_t Byte6;
-                uint8_t Byte7;
+                uint8_t byteData0;
+                uint8_t byteData1;
+                uint8_t byteData2;
+                uint8_t byteData3;
+                uint8_t byteData4;
+                uint8_t byteData5;
+                uint8_t byteData6;
+                uint8_t byteData7;
             };
         };
-    } FRAME_Buffer;
+    } CANDataFrame_t;
 
-    extern struct _i2c_status {
+    typedef struct xI2CLCDFlag {
         unsigned Enale : 1;
-        unsigned _4bit : 1;
-    } I2C_STATUS;
+        unsigned n8bit_4bit : 1;
+    } I2CLCDFlag_t;
 
-    extern union _i2c_lcd {
+    typedef union xI2CLCDIO {
 
         struct {
             unsigned RS : 1; //p0
@@ -245,19 +258,19 @@ extern "C" {
             unsigned : 4;
             unsigned D7_D4 : 4;
         };
-        uint8_t Byte;
-    } I2C_LCD;
+        uint8_t byteData;
+    } I2CLCDIO_t;
 
-    extern union _i2c_address {
+    typedef union xI2CLCDAddress {
 
         struct {
             unsigned R_nW : 1;
             unsigned Address : 7;
         };
-        uint8_t Address_R_nW;
-    } I2C_ADRRESS;
+        uint8_t byteData;
+    } I2CLCDAddress_t;
 
-    extern union _i2c_device {
+    typedef union xI2CDevice {
 
         struct {
             unsigned LCD : 1;
@@ -266,62 +279,13 @@ extern "C" {
             unsigned MCP79410 : 1;
             unsigned Check : 1;
         };
-        unsigned char ALL;
-    } I2C_Device;
+        uint8_t ALL;
+    } I2CDevice_t;
 
     typedef enum {
         I2C1 = 1,
         I2C2 = 2
-    } i2c_modules;
-
-    /*MCP4551*/
-    typedef enum {
-        WriteData,
-        Increment,
-        Decrement,
-        ReadData
-    } pot_operationbits;
-
-    typedef enum {
-        Volatile_Wiper_0,
-        Volatile_Wiper_1,
-        Volatile_TCON_Register = 0x04
-    } pot_memoryaddress;
-
-    typedef union {
-
-        struct {
-            unsigned Data8 : 1;
-            unsigned : 1;
-            pot_operationbits OperationBits : 2;
-            pot_memoryaddress MemoryAddress : 4;
-
-            uint8_t Data7_0;
-        };
-        uint8_t Byte[2];
-    } mcp4551cmd;
-
-    typedef enum {
-        A,
-        B
-    } A_B;
-
-    typedef enum {
-        _2x, //0 = 2x (VOUT = 2 * VREF * D/4096)
-        _1x //1 = 1x (VOUT = VREF * D/4096)
-    } GA;
-
-    typedef union {
-
-        struct {
-            unsigned Data11_0 : 12;
-            unsigned nSHDN : 1;
-            GA nGA : 1;
-            unsigned BUF : 1;
-            A_B nA_B : 1;
-        };
-        uint16_t Int;
-    } mcp4922cmd;
+    } I2CModules_t;
 
     /*Debounce*/
     typedef enum {
@@ -335,22 +299,16 @@ extern "C" {
         dsw4,
         dsw5,
         dsw6,
-    } DebounceSW;
+    } DebounceSwitch_t;
 
-
-
-    void DMA0Init(void); //UART1 transmitter
-    void DMA1Init(void); //UART1 receiver
-    void DMA2Init(void); //ADC1 convert done
-    void DMA3Init(void); //SPI Transmission
-    void DMA4Init(void); //SPI Reception
-    void DMA5Init(void); //ECAN1 Transmission
-    void DMA6Init(void); //ECAN1 Reception
-
-    uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits OperationBits, uint16_t Data);
-
-    void MCP4922_DualSine(void);
-
+    void DMA0_Initialize(void); //UART1 transmitter
+    void DMA1_Initialize(void); //UART1 receiver
+    void DMA2_Initialize(void); //ADC1 convert done
+    void DMA3_Initialize(void); //SPI Transmission
+    void DMA4_Initialize(void); //SPI Reception
+    void DMA5_Initialize(void); //ECAN1 Transmission
+    void DMA6_Initialize(void); //ECAN1 Reception
+    void MultiTask(void);
 
 #ifdef	__cplusplus
 }

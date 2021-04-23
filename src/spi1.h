@@ -156,7 +156,7 @@ typedef enum {
     uint16_t writeData;
     uint16_t readData;
     SPI1_STATUS status;
-    unsigned int    total;
+    uint16_t    total;
     SPI1_Initialize;
 
     total = 0;

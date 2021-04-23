@@ -9,140 +9,95 @@
 #include <xc.h>
 #include "Common.h"
 
-/*i2c*/
-extern I2C1_MESSAGE_STATUS i2c1_msg_status;
-I2C2_MESSAGE_STATUS i2c2_msg_status;
+#define pot_vaule ChannelVolt_mV[0]
+
 /*timer1*/
-extern uint16_t T1Counter_1ms;
-uint16_t _10ms = 0, _100ms = 0, _500ms = 0;
+extern uint16_t T1Cnt_1ms;
+uint16_t TCnt_5ms = 0, TCnt_50ms = 0;
+
+/*MultiTask*/
+uint8_t TASK = 0;
+uint8_t MultiTaskCnt_10ms = 0, MultiTaskCnt_100ms = 0, MultiTaskCnt_500ms = 0, MultiTaskCnt_1000ms = 0;
+
 /*Seg*/
-extern uint8_t FIRST_LINE_Data[6];
-extern uint8_t SECOND_LINE_Data[6];
-extern const uint8_t SEVEN_SEG_PATTERN[16];
-/*MCP4551 receive data*/
-uint8_t RcvData[2];
+extern uint8_t FirstLineData[6];
+extern uint8_t SecondLineData[6];
+extern const uint8_t SevenSegPattern[16];
+
 /*ADC*/
-extern uint16_t VR1, ADCValues_BUFFER[8];
-extern int ADCValues[8];
+extern uint16_t VR1_8bit, ADC1BUF[8], ChannelVolt_mV[8];
+
 /*USB CDC*/
-char CDC_Buffer[64];
-uint8_t Device_USB;
+uint8_t CDCSendBuffer[64];
+uint8_t flagOpenUSBCDCSerial;
+
+/*LED*/
+uint8_t LED2Blink, LED2BlinkDuty;
+
 /*Buzzer*/
-uint8_t BuzzerTimeCNT;
-uint8_t BuzzerFlag;
-uint8_t BzAlarm0, BzTrigger0;
-uint8_t BzAlarm1, BzTrigger1;
-uint8_t BzAlarm2, BzTrigger2;
-uint8_t bz;
+uint8_t BzTCnt;
+uint8_t BzOutput;
+uint8_t BzMode0Duty, BzMode0NumOfTime;
+uint8_t BzMode1Duty, BzMode1NumOfTime;
+uint8_t BzMode2Duty, BzMusicPointer;
+uint8_t flagBzMode;
+
 /*ECAN1*/
-__eds__ ECAN1MSGBUF ecan1msgBuf __attribute__((space(eds), aligned(ECAN1_MSG_BUF_LENGTH * 16)));
-uint32_t CANidentifier;
+__eds__ ECAN1MessageBuffer_t ecan1msgBuf __attribute__((space(eds), aligned(ECAN1_MSG_BUF_LENGTH * 16)));
+uint32_t CANIdentifier;
+
 /*Debounce*/
-uint8_t Switch_DeBounce_On[10], Switch_DeBounce_Off[10], Deboune = 20, TimeChanged = 99;
+uint8_t SwitchOnCnt[10], SwitchOffCnt[10], SwitchDebounceTime = 20, PreviousRTCSecond, RTCSecond;
+
 /*RTCC*/
-extern RTCC_Struct CurrentTime;
-uint8_t SetTime;
-uint8_t SetTime1Shot = 0;
+RTCC_t Now;
+uint8_t flagRTCCSetTime;
+uint8_t flagRTCCSetTime1shot = 0;
+uint8_t rtccSecondChanged = 0, rtccReadFailure = 0;
+
 /*Beep*/
-const uint8_t Music_Beep[29] = {100, 100, 0, 0, 100, 100, 0, 0, 100, 0, 100, 0, 100, 100, 0, 0, 100, 0, 100, 0, 100, 0, 100, 100, 0, 0, 100, 0, 100};
+const uint8_t BzMusic[29] = {100, 100, 0, 0, 100, 100, 0, 0, 100, 0, 100, 0, 100, 100, 0, 0, 100, 0, 100, 0, 100, 0, 100, 100, 0, 0, 100, 0, 100};
 
-/*BT*/
-#define BT2 !PORTDbits.RD8 /*BT2*/
-#define BT3 !PORTAbits.RA15 /*BT3*/
-#define BT4 !PORTDbits.RD0 /*BT4*/
-#define BT5 !PORTDbits.RD11 /*BT5*/
+/*SPI Data*/
+extern const uint16_t Sine[2][120];
+extern uint8_t SineIndex;
 
-/*SW-DIP*/
-#define DSW1 !PORTAbits.RA9 /*DSW1*/
-#define DSW2 !PORTBbits.RB8 /*DSW2*/
-#define DSW3 !PORTBbits.RB9 /*DSW3*/
-#define DSW4 !PORTBbits.RB10 /*DSW4*/
-#define DSW5 !PORTBbits.RB11 /*DSW5*/
-#define DSW6 !PORTAbits.RA1 /*DSW6*/
+I2CLCDFlag_t I2CStatus;
+I2CLCDIO_t I2CLCD;
+I2CLCDAddress_t I2CAddress;
+I2CDevice_t I2CDevice;
 
-/* Display ON/OFF Control defines */
-#define DON                     0b00001111  /* Display on      */
-#define DOFF                    0b00001011  /* Display off     */
-#define CURSOR_ON               0b00001111  /* Cursor on       */
-#define CURSOR_OFF              0b00001101  /* Cursor off      */
-#define BLINK_ON                0b00001111  /* Cursor Blink    */
-#define BLINK_OFF               0b00001110  /* Cursor No Blink */
-#define BLINK_OFF_CURSOR_OFF    0b00001100  /* Cursor No Blink, Cursor off */
-#define RETURN_HOME             0b00000001  /* Sets DDRAM address 0 in address counter */
+SwitchItem_t SwitchStatus, PreviousSwitchStatus;
+TimeFlag_t FLAG;
+BuzzerMode_t BzMode;
+RealTimeClock_t CLOCK;
+CANDataFrame_t CANDataFrame;
 
-/* Cursor or Display Shift defines */
-#define SHIFT_CUR_LEFT          0b00000100  /* Cursor shifts to the left   */
-#define SHIFT_CUR_RIGHT         0b00000101  /* Cursor shifts to the right  */
-#define SHIFT_DISP_LEFT         0b00000110  /* Display shifts to the left  */
-#define SHIFT_DISP_RIGHT        0b00000111  /* Display shifts to the right */
-
-/* Function Set defines */
-#define FOUR_BIT                0b00101100  /* 4-bit Interface               */
-#define EIGHT_BIT               0b00111100  /* 8-bit Interface               */
-#define LINE_5X7                0b00110000  /* 5x7 characters, single line   */
-#define LINE_5X10               0b00110100  /* 5x10 characters               */
-#define LINES_5X7               0b00111000  /* 5x7 characters, multiple line */
-
-uint8_t I2C_Check_Device(uint8_t ADDRESS, i2c_modules MODULES);
-void initial_LCD(void);
-void LCD_WriteInstruction(uint8_t Instruction);
-void LCD_WriteData(uint8_t DATA);
-void LCD_Set_Cursor(uint8_t CurY, uint8_t CurX);
-void LCD_PutROMString(const uint8_t *String);
-
-struct _i2c_status I2C_STATUS;
-union _i2c_lcd I2C_LCD;
-union _i2c_address I2C_ADRRESS;
-union _i2c_device I2C_Device;
-
-struct _switch SW, _SW;
-struct _tdm TDM;
-union _mission Mission;
-struct _flag FLAG;
-struct _buzzeralarm BuzzerAlarm;
-struct _clock CLOCK;
-struct _frame_buffer FRAME_Buffer;
-
-// *****************************************************************************
-// Section: Static Function declaration
-// *****************************************************************************
-
-void OscConfig(void);
-void IO_Config(void);
+void System_Initialize(void);
+void OSCILLATOR_Initialize(void);
+void PinManager_Initialize(void);
 void Time_Execute(void);
-void Mission_Execute(void);
-void Check_Button(void);
-void Debounce_Execute(uint16_t Input, DebounceSW Switch);
-void Buzzer_Execute(void);
-void Update_CLOCK1(void);
+void CheckSwitch(void);
+void Debounce(uint16_t Input, DebounceSwitch_t Switch);
+void CheckBzMode(void);
+void CheckLEDMode(void);
+void UpdateClock(void);
 void Time_Buf_to_LINE1(void);
 void EXT_ADC_Buf_to_LINE2(void);
 
-int main(void) {
-#ifdef USING_SIMULATOR
-    __C30_UART = 1;
-    fprintf(stdout, "USING_SIMULATOR: reseted\n");
-#else
-    /*SYSTEM_Initialize(SYSTEM_STATE_USB_START);
-    USBDeviceInit();
-    USBDeviceAttach();
-    CDCSetLineCoding(9600, NUM_STOP_BITS_1, PARITY_NONE, 8);
-    Device_USB = 1;*/
-#endif
-    OscConfig();
-    IO_Config();
-    Timer1_Initial();
-    UART1_Initial();
-    /*PWM_Initial();*/
-    ADC1_Initial();
-    Ecan1Init();
-    SPI1_Initialize();
-    I2C1_Initialize();
-    I2C2_Initialize();
-    LCM_Init();
+uint8_t CheckI2CDevice(uint8_t ADDRESS, I2CModules_t MODULES);
+void LCD_Initialize(void);
+void LCD_WriteInstruction(uint8_t Instruction);
+void LCD_WriteData(uint8_t DATA);
+void LCD_SetCursor(uint8_t CurY, uint8_t CurX);
+void LCD_PutROMString(const uint8_t *String);
 
-    LINE_12_Initial();
-    LINE_12_Write_Default();
+/*
+                         Main application
+ */
+int main(void) {
+    // initialize the device
+    System_Initialize();
 
     LCM_SetCursor(0, 2);
     LCM_PutROMString((const uint8_t*) "Hello, World");
@@ -150,34 +105,44 @@ int main(void) {
     LCM_SetCursor(1, 0);
     LCM_PutROMString((const uint8_t*) "Son of San,Dick!");
 
-    /*initial_LCD();
-    LCD_Set_Cursor(0, 0);
+    /*LCD_Initialize();
+    LCD_SetCursor(0, 0);
     LCD_PutROMString((const uint8_t*) "Hello, World");*/
 
-    //BuzzerAlarm._0 = 1;
-    I2C_Device.MCP79410 = I2C_Check_Device(SLAVE_I2C1_MCP79410_REG_ADDRESS, I2C1);
-    I2C_Device.MCP4551 = I2C_Check_Device(SLAVE_I2C2_MCP4551_ADDRESS, I2C2);
-#ifndef USING_SIMULATOR
-    if (I2C_Device.MCP79410 == 1) {
-        static uint16_t RETRY = 100, retry_counter = 0;
-        CurrentTime.sec = MCP79410_bcd2dec(MCP79410_Command(RTCSEC, 0x00, Read) & (~START_32KHZ));
-        do {
-            retry_counter++;
-            TimeChanged = CurrentTime.sec;
-            CurrentTime.sec = MCP79410_bcd2dec(MCP79410_Command(RTCSEC, 0x00, Read) & (~START_32KHZ));
-            if (TimeChanged != CurrentTime.sec || I2C_Device.MCP79410 != 1 || retry_counter == RETRY) break;
-            else __delay_ms(10);
-        } while (CurrentTime.sec == TimeChanged);
+    I2CDevice.MCP79410 = CheckI2CDevice(SLAVE_I2C1_MCP79410_REG_ADDRESS, I2C1);
+    I2CDevice.MCP4551 = CheckI2CDevice(SLAVE_I2C2_MCP4551_ADDRESS, I2C2);
+    if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
+        BzMode._0 = 1;
     }
-    __delay_ms(10);
-    MCP79410_GetTime();
-#endif
     while (1) {
         Time_Execute();
     }
 }
 
-void OscConfig(void) {
+void System_Initialize(void) {
+#ifndef USING_SIMULATOR
+    SYSTEM_Initialize(SYSTEM_STATE_USB_START);
+    USBDeviceInit();
+    USBDeviceAttach();
+    CDCSetLineCoding(9600, NUM_STOP_BITS_1, PARITY_NONE, 8);
+    flagOpenUSBCDCSerial = 1;
+#endif
+    OSCILLATOR_Initialize();
+    PinManager_Initialize();
+    Timer1_Initialize();
+    UART1_Initialize();
+    /*PWM_Initialize();*/
+    ADC1_Initialize();
+    ECAN1_Initialize();
+    SPI1_Initialize();
+    I2C1_Initialize();
+    I2C2_Initialize();
+    LCM_Initialize();
+
+    LINE_12_Initialize();
+}
+
+void OSCILLATOR_Initialize(void) {
     /*  Configure Oscillator to operate the device at 40Mhz
      Fosc= Fin*M/(N1*N2), Fcy=Fosc/2
      Fosc= 8M*40/(2*2)=80Mhz for 8M input clock */
@@ -202,16 +167,16 @@ void OscConfig(void) {
     };
 }
 
-void IO_Config(void) {
-    LED_Enable(LED_D1);
-    LED_Enable(LED_D2);
-    LED_Enable(LED_D3);
-    LED_Enable(LED_D4);
+void PinManager_Initialize(void) {
+    LEDEnable(LED_D1);
+    LEDEnable(LED_D2);
+    LEDEnable(LED_D3);
+    LEDEnable(LED_D4);
 
-    LED_Off(LED_D1);
-    LED_Off(LED_D2);
-    LED_Off(LED_D3);
-    LED_Off(LED_D4);
+    LEDTurnOff(LED_D1);
+    LEDTurnOff(LED_D2);
+    LEDTurnOff(LED_D3);
+    LEDTurnOff(LED_D4);
 
     /*Buzzer*/
     TRISGbits.TRISG13 = 0;
@@ -237,14 +202,13 @@ void IO_Config(void) {
     __builtin_write_OSCCONL(OSCCON & ~(1 << 6)); // unlock PPS
 
     /*UART1*/
-
     RPOR8bits.RP99R = 0b000001; //RF3->UART1:U1TX
     RPINR18bits.U1RXR = 0b1100010; //RF2->UART1:U1RX
 
     /*SPI1*/
     RPOR5bits.RP84R = 0x0006; //RE4->SPI1:SCK1
     RPOR5bits.RP82R = 0x0005; //RE2->SPI1:SDO1
-    //RPOR4bits.RP79R = 0x0007; //RD15->SPI1:SS1
+    //RPOR4bits.RP79R     = 0x0007; //RD15->SPI1:SS1
     TRISDbits.TRISD15 = 0;
     RPINR20bits.SCK1R = 0x0054; //RE4->SPI1:SCK1
 
@@ -258,41 +222,37 @@ void IO_Config(void) {
 }
 
 void Time_Execute(void) {
-    if (FLAG.Second) {
+    if (FLAG.Second == 1) {
+        UpdateClock();
         FLAG.Second = 0;
-        Update_CLOCK1();
     }
-    if (T1Counter_1ms >= 20) {
-        _500ms++;
-        Check_Button();
+    if (T1Cnt_1ms >= 20) {
+        TCnt_50ms++;
+        CheckSwitch();
 #ifndef USING_SIMULATOR
-        if (Device_USB == 1) {
+        if (flagOpenUSBCDCSerial == 1) {
             USBDeviceTasks();
+            CDCTxService();
         }
 #endif
-        SEVEN_SEGMENT_SCAN();
-        Mission_Execute();
-        Buzzer_Execute();
-        if (++TDM.Job >= 5) {
-
-            TDM.Job = 0;
+        Scan7Segment();
+        MultiTask();
+        CheckBzMode();
+        CheckLEDMode();
+        if (++TCnt_5ms >= 5) {
+            TCnt_5ms = 0;
 #ifndef USING_SIMULATOR
-            MCP4922_DualSine();
-            MCP4551_Command(Volatile_Wiper_0, WriteData, VR1);
-#endif
-
-            Time_Buf_to_LINE1();
-            if (++TDM.Task >= 4) {
-                TDM.Task = 0;
+            MCP4922_2SineOutput();
+            if (I2CDevice.MCP4551 == 1) {
+                MCP4551_Command(Volatile_Wiper_0, WriteData, VR1_8bit);
             }
-            Mission._TxJob ^= 1;
-            Mission.Jobs &= 0xE0;
+#endif
+            Time_Buf_to_LINE1();
             ClrWdt();
         }
-        if (_500ms >= 500) {
-            _500ms = 0x00;
+        if (TCnt_50ms >= 5) {
 #ifndef USING_SIMULATOR
-            if (Device_USB == 1) {
+            if (flagOpenUSBCDCSerial == 1) {
                 /*USB*/
                 if ((USBGetDeviceState() < CONFIGURED_STATE) ||
                         (USBIsDeviceSuspended() == true)) {
@@ -302,26 +262,252 @@ void Time_Execute(void) {
                 } else {
                     //Otherwise we are free to run user application code.
                     if (USBUSARTIsTxTrfReady() == true) {
-                        sprintf(CDC_Buffer, "VR1 =0x%02X(DEC:%d),%04d mV; RC:%d \r\n",
-                                VR1, VR1, ADCValues[0], CLOCK.Second);
-                        putsUSBUSART(CDC_Buffer);
+                        /*sprintf(CDC_Buffer, "VR1_8bit =0x%02X(DEC:%d),%04d mV; RC:%d \r\n",
+                                VR1_8bit, VR1_8bit, pot_vaule, CLOCK.Second);
+                        putsUSBUSART(CDC_Buffer);*/
+                        uint8_t BufferPointer = 0;
+                        CDCSendBuffer[BufferPointer++] = 0x44;
+                        CDCSendBuffer[BufferPointer++] = pot_vaule & 0xff;
+                        CDCSendBuffer[BufferPointer++] = (pot_vaule & 0xff00) >> 8;
+                        CDCSendBuffer[BufferPointer++] = Sine[A][SineIndex]& 0xff;
+                        CDCSendBuffer[BufferPointer++] = (Sine[A][SineIndex]& 0xff00) >> 8;
+                        CDCSendBuffer[BufferPointer++] = Sine[B][SineIndex]& 0xff;
+                        CDCSendBuffer[BufferPointer++] = (Sine[B][SineIndex]& 0xff00) >> 8;
+                        CDCSendBuffer[BufferPointer++] = BzOutput;
+                        CDCSendBuffer[BufferPointer++] = 0xff ^ CDCSendBuffer[0];
+                        CDCSendBuffer[BufferPointer++] = '\r';
+                        CDCSendBuffer[BufferPointer++] = '\n';
+                        putUSBUSART(CDCSendBuffer, BufferPointer);
                     }
                 }
-                CDCTxService();
+
+                uint8_t numbDatas;
+                uint8_t CDCRecvBuffer[64];
+                numbDatas = getsUSBUSART(CDCRecvBuffer, sizeof (CDCRecvBuffer)); //until the CDCRecvBuffer is free.
+                if (numbDatas != 0) {
+                    Nop();
+                    BzMode._2 = 1;
+                    //we received numbDatas bytes of data and they are copied into
+                    //  the "CDCRecvBuffer" variable.  We can do something with the data
+                    //  here.
+                }
             }
 #endif
+            TCnt_50ms = 0x00;
         }
-        T1Counter_1ms = 0x00;
+        T1Cnt_1ms = 0x00;
     }
 }
 
-void Update_CLOCK1(void) {
+void MultiTask(void) {
+    static uint8_t flagCAN_Tx1shot = 0, flagCAN_TxContinuous = 0, flagMusic1shot = 0;
+    switch (TASK) {
+        default:
+            TASK = 0;
+        case 0:
+            if (SwitchStatus.bTACT != 0 || SwitchStatus.bDIP != 0) { /*Freq: 50Hz*/
+                LEDTurnOn(LED_D4);
+                if ((PreviousSwitchStatus.bTACT != SwitchStatus.bTACT) || (PreviousSwitchStatus.bDIP != SwitchStatus.bDIP)) flagCAN_Tx1shot = 1;
+                if (MultiTaskCnt_1000ms <= 50 && SwitchStatus.bTACT != 0) ++MultiTaskCnt_1000ms;
+                else if (SwitchStatus.bTACT == 0x00 && SwitchStatus.bDIP == 0x00) {
+                    MultiTaskCnt_1000ms = 0;
+                    flagCAN_TxContinuous = 0;
+                } else if (MultiTaskCnt_1000ms > 50) flagCAN_TxContinuous = 1;
+                //ID = 0x18ABCDEF
+                if ((C1TR23CONbits.TXREQ3 == 0 && flagCAN_Tx1shot == 1) || flagCAN_TxContinuous) {
+                    flagCAN_Tx1shot = 0;
+                    CANDataFrame.byteData0 = CLOCK.Year;
+                    CANDataFrame.byteData1 = CLOCK.Month;
+                    CANDataFrame.byteData2 = CLOCK.Date;
+                    CANDataFrame.byteData3 = CLOCK.Weekday;
+                    CANDataFrame.byteData4 = CLOCK.Hour;
+                    CANDataFrame.byteData5 = CLOCK.Minute;
+                    CANDataFrame.byteData6 = CLOCK.Second;
+                    CANDataFrame.byteData7 = 0x00;
+                    Ecan1WriteTxMsgBufId(3, CANTX_ID_TRIGGER, 1, 0);
+                    Ecan1WriteTxMsgBufData(3, 8,
+                            (uint16_t) CANDataFrame.wordData0,
+                            (uint16_t) CANDataFrame.wordData1,
+                            (uint16_t) CANDataFrame.wordData2,
+                            (uint16_t) CANDataFrame.wordData3);
+                    C1TR23CONbits.TXREQ3 = 1;
+                }
+            } else {
+                LEDTurnOff(LED_D4);
+                flagCAN_Tx1shot = 0;
+                flagCAN_TxContinuous = 0;
+                MultiTaskCnt_1000ms = 0;
+            }
+            PreviousSwitchStatus.bTACT = SwitchStatus.bTACT;
+            PreviousSwitchStatus.bDIP = SwitchStatus.bDIP;
+            Nop();
+            break;
+        case 1:
+            if (SwitchStatus.TACT._BT3 == 1) {
+                if (flagMusic1shot == 0) BzMode._2 = 1;
+                flagMusic1shot = 1;
+            } else flagMusic1shot = 0;
+            if (pot_vaule >= 3150 ||
+                    SwitchStatus.TACT._BT5 != 0 ||
+                    (CANIdentifier == (CANRX_ID_1 + 1) && SwitchStatus.DIP._DSW6 == 1) ||
+                    flagBzMode) BzOutput = 1;
+            else BzOutput = 0;
+            Nop();
+            break;
+        case 2:
+            Nop();
+            break;
+        case 3:
+            Nop();
+            break;
+        case 4:
+            Nop();
+            break;
+        case 5:
+            if (flagRTCCSetTime == 1 &&
+                    flagRTCCSetTime1shot == 0 &&
+                    I2CDevice.MCP79410 == 1) {
+                MCP79410_Initialize();
+                BzMode._1 = 1;
+                MCP79410_DisableOscillator();
+                MCP79410_SetTime(&Now);
+                MCP79410_EnableOscillator(); //Start clock by enabling oscillator
+                MCP79410_GetTime();
+                flagRTCCSetTime1shot = 1;
+            }
+            Nop();
+            break;
+        case 6:
+            if (++MultiTaskCnt_100ms >= 5) { /*Freq: 10Hz*/
+                MultiTaskCnt_100ms = 0;
+                //ID = 0x405
+                if (C1TR01CONbits.TXREQ1 == 0) {
+                    Ecan1WriteTxMsgBufId(1, CANTX_ID_100MS, 1, 0);
+                    Ecan1WriteTxMsgBufData(1, 2,
+                            (uint16_t) pot_vaule,
+                            (uint16_t) 0x00,
+                            (uint16_t) 0x00,
+                            (uint16_t) 0x00);
+                    C1TR01CONbits.TXREQ1 = 1;
+                }
+            }
+            Nop();
+            break;
+        case 7:
+            Nop();
+            break;
+        case 8:
+            Nop();
+            break;
+        case 9:
+            Nop();
+            break;
+        case 10:
+            Nop();
+            break;
+        case 11:
+            if (++MultiTaskCnt_500ms >= 25) { /*Freq: 2Hz*/
+                MultiTaskCnt_500ms = 0;
+                //ID = 0x200
+                if (C1TR23CONbits.TXREQ2 == 0) {
+                    Ecan1WriteTxMsgBufId(2, CANTX_ID_500MS, 1, 0);
+                    Ecan1WriteTxMsgBufData(2, 8,
+                            (uint16_t) 0x2301,
+                            (uint16_t) 0x4523,
+                            (uint16_t) 0x6745,
+                            (uint16_t) 0x0167);
+                    C1TR23CONbits.TXREQ2 = 1;
+                }
+            }
+            Nop();
+            break;
+        case 12:
+            Nop();
+            break;
+        case 13:
+            Nop();
+            break;
+        case 14:
+            Nop();
+            break;
+        case 15:
+            Nop();
+            break;
+        case 16:
+            Nop();
+            break;
+        case 17:
+            Nop();
+            break;
+        case 18:
+            Nop();
+            break;
+        case 19:
+            Nop();
+            break;
+    }
+    if (TASK % 10 == 2) {
+        EXT_ADC_Buf_to_LINE2(); /*Freq: 100Hz*/
+    } else if (TASK % 10 == 3) {
+        static uint8_t rtccSecondChanged1shot = 0;
+#ifndef USING_SIMULATOR
+        if (I2CDevice.MCP79410 == 1 && rtccSecondChanged == 0 && rtccReadFailure == 0) {
+            uint8_t I2CRetryCnt = 0;
+            static uint8_t _1shot = 0;
+            if (_1shot == 0) {
+                _1shot = 1;
+                RTCSecond = MCP79410_Command(RTCSEC, 0x00, Read);
+                PreviousRTCSecond = RTCSecond;
+            }
+            RTCSecond = MCP79410_Command(RTCSEC, 0x00, Read);
+            if (PreviousRTCSecond != RTCSecond) {
+                rtccSecondChanged = 1;
+            }
+            if (I2CDevice.MCP79410 != 1 || I2CRetryCnt == 100) {
+                rtccReadFailure = 1;
+            } else {
+                I2CRetryCnt++;
+            }
+            PreviousRTCSecond = RTCSecond;
+        } else if (I2CDevice.MCP79410 == 0) {
+            rtccReadFailure = 1;
+        }
+        if (rtccSecondChanged == 1 && rtccSecondChanged1shot == 0) {
+            MCP79410_GetTime();
+            rtccSecondChanged1shot = 1;
+        }
+#endif
+    }
+    if (TASK % 5 == 0) {
+        if (++MultiTaskCnt_10ms >= 2) {
+            MultiTaskCnt_10ms = 0;
+            //ID = 0x400
+            if (C1TR01CONbits.TXREQ0 == 0) {
+                Ecan1WriteTxMsgBufId(0, CANTX_ID_20MS, 1, 0);
+                Ecan1WriteTxMsgBufData(0, 1,
+                        (uint16_t) CLOCK.Second,
+                        (uint16_t) 0x00,
+                        (uint16_t) 0x00,
+                        (uint16_t) 0x00);
+                C1TR01CONbits.TXREQ0 = 1;
+            }
+        }
+    }
+    TASK++;
+}
+
+void UpdateClock(void) {
     CLOCK.Second++;
     if (CLOCK.Second >= 60) {
         CLOCK.Second = 0;
         CLOCK.Minute++;
-        MCP79410_GetTime();
-        if ((CLOCK.Hour == 17 && CLOCK.Minute == 0) || (CLOCK.Hour == 11 && CLOCK.Minute == 25)) BuzzerAlarm._2 = 1;
+        if (I2CDevice.MCP79410 == 1) {
+            MCP79410_GetTime();
+        }
+        if (SwitchStatus.bDIP == 0x00) {
+            if ((CLOCK.Hour == 17 && CLOCK.Minute == 0) || (CLOCK.Hour == 11 && CLOCK.Minute == 25)) BzMode._2 = 1;
+            else if (CLOCK.Hour == 11 && CLOCK.Minute == 0) BzMode._1 = 1;
+        }
         if (CLOCK.Minute >= 60) {
             CLOCK.Minute = 0;
             CLOCK.Hour++;
@@ -332,399 +518,130 @@ void Update_CLOCK1(void) {
 }
 
 void Time_Buf_to_LINE1(void) {
-    FIRST_LINE_Data[0] = SEVEN_SEG_PATTERN[CLOCK.Hour / 10];
-    FIRST_LINE_Data[1] = SEVEN_SEG_PATTERN[CLOCK.Hour % 10];
-    FIRST_LINE_Data[2] = SEVEN_SEG_PATTERN[CLOCK.Minute / 10];
-    FIRST_LINE_Data[3] = SEVEN_SEG_PATTERN[CLOCK.Minute % 10];
-    FIRST_LINE_Data[4] = SEVEN_SEG_PATTERN[CLOCK.Second / 10];
-    FIRST_LINE_Data[5] = SEVEN_SEG_PATTERN[CLOCK.Second % 10];
+    if (rtccSecondChanged == 1 || rtccReadFailure == 1) {
+        FirstLineData[0] = SevenSegPattern[CLOCK.Hour / 10];
+        FirstLineData[1] = SevenSegPattern[CLOCK.Hour % 10];
+        FirstLineData[2] = SevenSegPattern[CLOCK.Minute / 10];
+        FirstLineData[3] = SevenSegPattern[CLOCK.Minute % 10];
+        FirstLineData[4] = SevenSegPattern[CLOCK.Second / 10];
+        FirstLineData[5] = SevenSegPattern[CLOCK.Second % 10];
+    } else {
+        FirstLineData[0] = SevenSegPattern[10];
+        FirstLineData[1] = SevenSegPattern[10];
+        FirstLineData[2] = SevenSegPattern[10];
+        FirstLineData[3] = SevenSegPattern[10];
+        FirstLineData[4] = SevenSegPattern[10];
+        FirstLineData[5] = SevenSegPattern[10];
+    }
+
 }
 
 void EXT_ADC_Buf_to_LINE2(void) {
     uint16_t Temp_Value;
 
-    Temp_Value = ADCValues[0];
-    SECOND_LINE_Data[0] = SEVEN_SEG_PATTERN[Temp_Value / 1000 ];
+    Temp_Value = pot_vaule;
+    SecondLineData[0] = SevenSegPattern[Temp_Value / 1000 ];
     Temp_Value = Temp_Value - (1000 * (Temp_Value / 1000));
-    SECOND_LINE_Data[1] = SEVEN_SEG_PATTERN[Temp_Value / 100];
+    SecondLineData[1] = SevenSegPattern[Temp_Value / 100];
     Temp_Value = Temp_Value - (100 * (Temp_Value / 100));
-    SECOND_LINE_Data[2] = SEVEN_SEG_PATTERN[Temp_Value / 10];
-    SECOND_LINE_Data[3] = SEVEN_SEG_PATTERN[Temp_Value % 10];
-    SECOND_LINE_Data[4] = SEVEN_SEG_PATTERN[10];
-    SECOND_LINE_Data[5] = SEVEN_SEG_PATTERN[10];
+    SecondLineData[2] = SevenSegPattern[Temp_Value / 10];
+    SecondLineData[3] = SevenSegPattern[Temp_Value % 10];
+    SecondLineData[4] = SevenSegPattern[10];
+    SecondLineData[5] = SevenSegPattern[10];
 }
 
-uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits OperationBits, uint16_t Data) {
-    mcp4551cmd Command = {
-        .Data8 = (Data >> 8) & 0x01,
-        .OperationBits = OperationBits,
-        .MemoryAddress = MemoryAddress,
+void CheckSwitch(void) {
+    Debounce(BT2, bt2);
+    Debounce(BT3, bt3);
+    Debounce(BT4, bt4);
+    Debounce(BT5, bt5);
 
-        .Data7_0 = Data & 0xFF
-    };
-    uint16_t TimeOut = 0, readData = 0;
-    I2C2_TRANSACTION_REQUEST_BLOCK readTRB[2];
-    if (OperationBits != ReadData) {
-        if (MemoryAddress == Volatile_Wiper_1) MemoryAddress = Volatile_Wiper_0;
-        I2C2_MasterWrite(Command.Byte, 2, SLAVE_I2C2_MCP4551_ADDRESS, &i2c2_msg_status);
-        while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
-            if (TimeOut == SLAVE_I2C2_MCP4551_DEVICE_TIMEOUT) {
-                break;
-            } else TimeOut++;
-        }
-    } else {
-        // Build TRB for sending address
-        I2C2_MasterWriteTRBBuild(readTRB, Command.Byte, 1, SLAVE_I2C2_MCP4551_ADDRESS);
-        // Build TRB for receiving data
-        I2C2_MasterReadTRBBuild(&readTRB[1], RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS);
-
-        I2C2_MasterTRBInsert(2, readTRB, &i2c2_msg_status);
-        //I2C2_MasterRead(Command.Byte, 1, RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS, &i2c2_msg_status);
-        TimeOut = 0;
-        while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
-            if (TimeOut == SLAVE_I2C2_MCP4551_DEVICE_TIMEOUT) {
-                break;
-            } else TimeOut++;
-        }
-        if (i2c2_msg_status == I2C2_MESSAGE_COMPLETE) readData = RcvData[1] + ((RcvData[0]&0x01) << 8);
-    }
-    return readData;
-}
-
-void Mission_Execute(void) {
-    if (TDM.Job == 0 && !Mission._0Job) { /*Freq: 200Hz*/
-        if (TDM.Task == 0) { /*@0ms*/
-            static unsigned CANTxTrigger = 0, CANTxContinuous = 0;
-            static uint8_t _1000ms = 0;
-            if (SW._TACT || SW._DIP) { /*Freq: 50Hz*/
-                LED_On(LED_D4);
-                if ((_SW._TACT != SW._TACT) || (_SW._DIP != SW._DIP)) CANTxTrigger = 1;
-                if (_1000ms <= 50 && SW._TACT)++_1000ms;
-                else if (SW._TACT == 0x00 && SW._DIP == 0x00) {
-                    _1000ms = 0;
-                    CANTxContinuous = 0;
-                } else if (_1000ms > 50)CANTxContinuous = 1;
-                if ((!C1TR23CONbits.TXREQ3 && CANTxTrigger) || CANTxContinuous) {
-                    CANTxTrigger = 0;
-                    FRAME_Buffer.Byte0 = CLOCK.Year;
-                    FRAME_Buffer.Byte1 = CLOCK.Month;
-                    FRAME_Buffer.Byte2 = CLOCK.Date;
-                    FRAME_Buffer.Byte3 = CLOCK.Weekday;
-                    FRAME_Buffer.Byte4 = CLOCK.Hour;
-                    FRAME_Buffer.Byte5 = CLOCK.Minute;
-                    FRAME_Buffer.Byte6 = CLOCK.Second;
-                    FRAME_Buffer.Byte7 = 0x00;
-                    Ecan1WriteTxMsgBufId(3, EXT_TRIGGER_ID, 1, 0);
-                    Ecan1WriteTxMsgBufData(3, 8,
-                            (uint16_t) FRAME_Buffer.DataWord0,
-                            (uint16_t) FRAME_Buffer.DataWord1,
-                            (uint16_t) FRAME_Buffer.DataWord2,
-                            (uint16_t) FRAME_Buffer.DataWord3);
-                    C1TR23CONbits.TXREQ3 = 1;
-                }
-
-            } else {
-                LED_Off(LED_D4);
-                CANTxTrigger = 0;
-                CANTxContinuous = 0;
-                _1000ms = 0;
-            }
-            _SW._TACT = SW._TACT;
-            _SW._DIP = SW._DIP;
-            Nop();
-        } else if (TDM.Task == 1) { /*@5ms*/
-            if (SetTime&&!SetTime1Shot) {
-                MCP79410_Initialize();
-                BuzzerAlarm._1 = 1;
-                MCP79410_DisableOscillator();
-                MCP79410_SetTime(&CurrentTime);
-                MCP79410_EnableOscillator(); //Start clock by enabling oscillator
-                MCP79410_GetTime();
-                SetTime1Shot = 1;
-            }
-        } else if (TDM.Task == 2) { /*@10ms*/
-
-        } else if (TDM.Task == 3) { /*@15ms*/
-
-        }
-        if (++_10ms >= 2) {
-            _10ms = 0;
-            if (!C1TR01CONbits.TXREQ0) {
-                Ecan1WriteTxMsgBufId(0, EXT_20MS_ID, 1, 0);
-                Ecan1WriteTxMsgBufData(0, 1,
-                        (uint16_t) CLOCK.Second,
-                        (uint16_t) 0x00,
-                        (uint16_t) 0x00,
-                        (uint16_t) 0x00);
-                C1TR01CONbits.TXREQ0 = 1;
-            }
-        }
-        Mission._0Job = 1;
-    } else if (TDM.Job == 1 && !Mission._1Job) { /*Freq: 200Hz*/
-        if (TDM.Task == 0) { /*@1ms*/
-            static uint8_t oneshot = 0;
-            if (SW.TACT._BT3) {
-                if (!oneshot) BuzzerAlarm._2 = 1;
-                oneshot = 1;
-            } else oneshot = 0;
-            if (ADCValues[0] >= 2500 || SW.TACT._BT5 || (CANidentifier == 0x41 && SW.DIP._DSW6) || bz) BuzzerFlag = 1;
-            else BuzzerFlag = 0;
-        } else if (TDM.Task == 1) { /*@6ms*/
-            if (++_100ms >= 5) { /*Freq: 10Hz*/
-                _100ms = 0;
-                if (!C1TR01CONbits.TXREQ1) {
-                    Ecan1WriteTxMsgBufId(1, EXT_100MS_ID, 1, 0);
-                    Ecan1WriteTxMsgBufData(1, 2,
-                            (uint16_t) ADCValues[0],
-                            (uint16_t) 0x00,
-                            (uint16_t) 0x00,
-                            (uint16_t) 0x00);
-                    C1TR01CONbits.TXREQ1 = 1;
-                }
-            }
-        } else if (TDM.Task == 2) { /*@11ms*/
-            static uint8_t _s500ms = 0;
-            if (++_s500ms >= 25) { /*Freq: 2Hz*/
-                _s500ms = 0;
-                if (!C1TR23CONbits.TXREQ2) {
-                    Ecan1WriteTxMsgBufId(2, EXT_500MS_ID, 1, 0);
-                    Ecan1WriteTxMsgBufData(2, 8,
-                            (uint16_t) 0x2301,
-                            (uint16_t) 0x4523,
-                            (uint16_t) 0x6745,
-                            (uint16_t) 0x0167);
-                    C1TR23CONbits.TXREQ2 = 1;
-                }
-            }
-        } else if (TDM.Task == 3) { /*@16ms*/
-
-        }
-
-        Mission._1Job = 1;
-    } else if (TDM.Job == 2 && !Mission._2Job) { /*Freq: 200Hz*/
-        if (TDM.Task == 0) { /*@2ms*/
-
-        } else if (TDM.Task == 1) { /*@7ms*/
-
-        } else if (TDM.Task == 2) { /*@12ms*/
-
-        } else if (TDM.Task == 3) { /*@17ms*/
-
-        }
-        Mission._2Job = 1;
-    } else if (TDM.Job == 3 && !Mission._3Job) { /*Freq: 200Hz*/
-        if (TDM.Task == 0) { /*@3ms*/
-
-        } else if (TDM.Task == 1) { /*@8ms*/
-
-        } else if (TDM.Task == 2) { /*@13ms*/
-
-        } else if (TDM.Task == 3) { /*@18ms*/
-
-        }
-        Mission._3Job = 1;
-    } else if (TDM.Job == 4 && !Mission._4Job) { /*Freq: 200Hz*/
-        if (TDM.Task == 0) { /*@4ms*/
-
-        } else if (TDM.Task == 1) { /*@9ms*/
-
-        } else if (TDM.Task == 2) { /*@14ms*/
-
-        } else if (TDM.Task == 3) { /*@19ms*/
-
-        }
-
-        if (Mission._TxJob) { /*@4ms + 10x ms*/
-            EXT_ADC_Buf_to_LINE2(); /*Freq: 100Hz*/
-        }
-
-        Mission._4Job = 1;
-    } else {
-
-        TDM.Job = 0;
-        TDM.Task = 0;
-        Mission.Jobs = 0;
-    }
-}
-
-void Check_Button(void) {
-    /*BT2*/
-
-    /*if (BT2) {
-        Switch_DeBounce[BT2_Released] = 0x00;
-        if (Switch_DeBounce[BT2_Pushed] < Deboune)++Switch_DeBounce[BT2_Pushed];
-        else SW.TACT._BT2 = 1;
-    } else {
-        Switch_DeBounce[BT2_Pushed] = 0x00;
-        if (Switch_DeBounce[BT2_Released] < Deboune)++Switch_DeBounce[BT2_Released];
-        else SW.TACT._BT2 = 0;
-    }*/
-    Debounce_Execute(BT2, bt2);
-    Debounce_Execute(BT3, bt3);
-    Debounce_Execute(BT4, bt4);
-    Debounce_Execute(BT5, bt5);
-    /*DSW1*/
-    /*if (DSW1) {
-        Switch_DeBounce[DSW1_Off] = 0x00;
-        if (Switch_DeBounce[DSW1_On] < Deboune)++Switch_DeBounce[DSW1_On];
-        else SW.DIP._DSW1 = 1;
-    } else {
-        Switch_DeBounce[DSW1_On] = 0x00;
-        if (Switch_DeBounce[DSW1_Off] < Deboune)++Switch_DeBounce[DSW1_Off];
-        else SW.DIP._DSW1 = 0;
-    }*/
-    Debounce_Execute(DSW1, dsw1);
-    Debounce_Execute(DSW2, dsw2);
-    Debounce_Execute(DSW3, dsw3);
-    Debounce_Execute(DSW4, dsw4);
-    Debounce_Execute(DSW5, dsw5);
-    Debounce_Execute(DSW6, dsw6);
+    Debounce(DSW1, dsw1);
+    Debounce(DSW2, dsw2);
+    Debounce(DSW3, dsw3);
+    Debounce(DSW4, dsw4);
+    Debounce(DSW5, dsw5);
+    Debounce(DSW6, dsw6);
 
 }
 
-void Debounce_Execute(uint16_t Input, DebounceSW Switch) {
+void Debounce(uint16_t Input, DebounceSwitch_t Switch) {
     uint16_t* Output;
-    uint8_t Bit_On, Bit_Off;
+    uint8_t BitOn, BitOff;
     if (Switch >= bt2 && Switch <= bt5) {
-        Bit_On = Switch;
-        Output = (uint16_t *) & SW._TACT;
+        BitOn = Switch;
+        Output = (uint16_t *) & SwitchStatus.bTACT;
     } else if (Switch >= dsw1 && Switch <= dsw6) {
-        Bit_On = (Switch - dsw1);
-        Output = (uint16_t *) & SW._DIP;
+        BitOn = (Switch - dsw1);
+        Output = (uint16_t *) & SwitchStatus.bDIP;
     }
-    Bit_Off = ~(1 << Bit_On);
-    Bit_On = (1 << Bit_On);
+    BitOff = ~(1 << BitOn);
+    BitOn = (1 << BitOn);
     if (Input) {
-        Switch_DeBounce_Off[Switch] = 0x00;
-        if (Switch_DeBounce_On[Switch] < Deboune)++Switch_DeBounce_On[Switch];
-        else *Output |= Bit_On;
+        SwitchOffCnt[Switch] = 0x00;
+        if (SwitchOnCnt[Switch] < SwitchDebounceTime) ++SwitchOnCnt[Switch];
+        else *Output |= BitOn;
     } else {
-        Switch_DeBounce_On[Switch] = 0x00;
-        if (Switch_DeBounce_Off[Switch] < Deboune)++Switch_DeBounce_Off[Switch];
-        else *Output &= Bit_Off;
+        SwitchOnCnt[Switch] = 0x00;
+        if (SwitchOffCnt[Switch] < SwitchDebounceTime) ++SwitchOffCnt[Switch];
+        else *Output &= BitOff;
     }
 }
 
-//void DebounceExec(DebounceSW Input) {
-//    uint8_t Sw = 0, n = 0, N = 0xFF;
-//    uint16_t* Output;
-//    switch (Input) {
-//        case BT2_Pushed:
-//            n = 0;
-//            Sw = BT2;
-//            break;
-//        case BT3_Pushed:
-//            n = 1;
-//            Sw = BT3;
-//            break;
-//        case BT4_Pushed:
-//            n = 2;
-//            Sw = BT4;
-//            break;
-//        case BT5_Pushed:
-//            n = 3;
-//            Sw = BT5;
-//            break;
-//        case DSW1_On:
-//            n = 0;
-//            Sw = DSW1;
-//            break;
-//        case DSW2_On:
-//            n = 1;
-//            Sw = DSW2;
-//            break;
-//        case DSW3_On:
-//            n = 2;
-//            Sw = DSW3;
-//            break;
-//        case DSW4_On:
-//            n = 3;
-//            Sw = DSW4;
-//            break;
-//        case DSW5_On:
-//            n = 4;
-//            Sw = DSW5;
-//            break;
-//        case DSW6_On:
-//            n = 5;
-//            Sw = DSW6;
-//            break;
-//        default:
-//            break;
-//    }
-//    switch (Input) {
-//        case BT5_Pushed:
-//        case BT4_Pushed:
-//        case BT3_Pushed:
-//        case BT2_Pushed:
-//            Output = (uint16_t *) &SW._TACT;
-//            break;
-//        case DSW6_On:
-//        case DSW5_On:
-//        case DSW4_On:
-//        case DSW3_On:
-//        case DSW2_On:
-//        case DSW1_On:
-//            Output = (uint16_t *) &SW._DIP;
-//            break;
-//        default:
-//            break;
-//    }
-//    N &= (1 << n);
-//    if (Sw) {
-//        Switch_DeBounce[Input + 1] = 0x00;
-//        if (Switch_DeBounce[Input] < Deboune)++Switch_DeBounce[Input];
-//        else *Output |= (1 << n);
-//    } else {
-//        Switch_DeBounce[Input] = 0x00;
-//        if (Switch_DeBounce[Input + 1] < Deboune)++Switch_DeBounce[Input + 1];
-//
-//        else *Output &= ~N;
-//    }
-//}
+void CheckLEDMode(void) {
+    static uint8_t LED2BlinkCnt = 0;
+    if (LED2Blink == 1) {
+        if (++LED2BlinkCnt >= 50) {
+            LED2BlinkCnt = 0;
+            LED2Blink = 0;
+        }
+        LED2BlinkDuty = 100;
+    } else {
+        LED2BlinkDuty = 5;
+    }
+}
 
-void Buzzer_Execute(void) {
-    if (BuzzerAlarm._0) {
-        if (++BzAlarm0 >= 100) {
-            ++BzTrigger0;
-            BzAlarm0 = 0;
+void CheckBzMode(void) {
+    if (BzMode._0) {
+        if (++BzMode0Duty >= 100) {
+            ++BzMode0NumOfTime;
+            BzMode0Duty = 0;
         }
     } else {
-        BzAlarm0 = 0;
-        BzTrigger0 = 0;
+        BzMode0Duty = 0;
+        BzMode0NumOfTime = 0;
     }
-    if (BzTrigger0 >= 5) BuzzerAlarm._0 = 0;
+    if (BzMode0NumOfTime >= 5) BzMode._0 = 0;
     /**************************************/
 
-    if (BuzzerAlarm._1) {
-        if (++BzAlarm1 >= 200) {
-            ++BzTrigger1;
-            BzAlarm1 = 0;
+    if (BzMode._1) {
+        if (++BzMode1Duty >= 200) {
+            ++BzMode1NumOfTime;
+            BzMode1Duty = 0;
         }
     } else {
-        BzAlarm1 = 0;
-        BzTrigger1 = 0;
+        BzMode1Duty = 0;
+        BzMode1NumOfTime = 0;
     }
-    if (BzTrigger1 >= 2) BuzzerAlarm._1 = 0;
-    if (BuzzerAlarm._2) {
-        if (++BzAlarm2 >= 100) {
-            ++BzTrigger2;
-            BzAlarm2 = 0;
+    if (BzMode1NumOfTime >= 2) BzMode._1 = 0;
+    if (BzMode._2) {
+        if (++BzMode2Duty >= 100) {
+            ++BzMusicPointer;
+            BzMode2Duty = 0;
         }
     } else {
-        BzAlarm2 = 0;
-        BzTrigger2 = 0;
+        BzMode2Duty = 0;
+        BzMusicPointer = 0;
     }
-    if (BzTrigger2 >= 29) BuzzerAlarm._2 = 0;
+    if (BzMusicPointer >= 29) BzMode._2 = 0;
     /**************************************/
 
-    if ((BzAlarm0 < 50 && BuzzerAlarm._0) ||
-            (BzAlarm1 < 150 && BuzzerAlarm._1) ||
-            (BzAlarm2 < Music_Beep[BzTrigger2] && BuzzerAlarm._2)) {
-        bz = 1;
+    if ((BzMode0Duty < 50 && BzMode._0) ||
+            (BzMode1Duty < 150 && BzMode._1) ||
+            (BzMode2Duty < BzMusic[BzMusicPointer] && BzMode._2)) {
+        flagBzMode = 1;
     } else {
-
-        bz = 0;
+        flagBzMode = 0;
     }
 }
 
@@ -736,77 +653,77 @@ void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
 
     if (C1INTFbits.RBIF) {
         C1INTFbits.RBIF = 0;
-        if (C1RXFUL1bits.RXFUL4) {
-            FRAME_Buffer.SID = (ecan1msgBuf[4][0] & 0x1ffc) >> 2;
-            FRAME_Buffer.EID = ((uint32_t) (ecan1msgBuf[4][1] & 0x0fff) << 6) + ((ecan1msgBuf[4][2]& 0xfc00) >> 10);
-            FRAME_Buffer.IDE_BIT = ecan1msgBuf[4][0] & 0x0001;
-            FRAME_Buffer.DLC = ecan1msgBuf[4][2] & 0x000f;
-            FRAME_Buffer.DataWord0 = ecan1msgBuf[4][3];
-            FRAME_Buffer.DataWord1 = ecan1msgBuf[4][4];
-            FRAME_Buffer.DataWord2 = ecan1msgBuf[4][5];
-            FRAME_Buffer.DataWord3 = ecan1msgBuf[4][6];
-            LED_Toggle(LED_D2);
-            LED_Off(LED_D3);
+        if (C1RXFUL1bits.RXFUL4) { //ID = 0x40
+            CANDataFrame.SID = (ecan1msgBuf[4][0] & 0x1ffc) >> 2;
+            CANDataFrame.EID = ((uint32_t) (ecan1msgBuf[4][1] & 0x0fff) << 6) + ((ecan1msgBuf[4][2]& 0xfc00) >> 10);
+            CANDataFrame.IDE_BIT = ecan1msgBuf[4][0] & 0x0001;
+            CANDataFrame.DLC = ecan1msgBuf[4][2] & 0x000f;
+            CANDataFrame.wordData0 = ecan1msgBuf[4][3];
+            CANDataFrame.wordData1 = ecan1msgBuf[4][4];
+            CANDataFrame.wordData2 = ecan1msgBuf[4][5];
+            CANDataFrame.wordData3 = ecan1msgBuf[4][6];
             C1RXFUL1bits.RXFUL4 = 0;
         }
-        if (C1RXFUL1bits.RXFUL6) {
-            FRAME_Buffer.SID = (ecan1msgBuf[6][0] & 0x1ffc) >> 2;
-            FRAME_Buffer.EID = ((uint32_t) (ecan1msgBuf[6][1] & 0x0fff) << 6) + ((ecan1msgBuf[6][2]& 0xfc00) >> 10);
-            FRAME_Buffer.IDE_BIT = ecan1msgBuf[6][0] & 0x0001;
-            FRAME_Buffer.DLC = ecan1msgBuf[6][2] & 0x000f;
-            FRAME_Buffer.DataWord0 = ecan1msgBuf[6][3];
-            FRAME_Buffer.DataWord1 = ecan1msgBuf[6][4];
-            FRAME_Buffer.DataWord2 = ecan1msgBuf[6][5];
-            FRAME_Buffer.DataWord3 = ecan1msgBuf[6][6];
-            CurrentTime.year = FRAME_Buffer.Byte0;
-            CurrentTime.month = FRAME_Buffer.Byte1;
-            CurrentTime.date = FRAME_Buffer.Byte2;
-            CurrentTime.weekday = FRAME_Buffer.Byte3;
-            CurrentTime.hour = FRAME_Buffer.Byte4;
-            CurrentTime.min = FRAME_Buffer.Byte5;
-            CurrentTime.sec = FRAME_Buffer.Byte6;
-            LED_Toggle(LED_D3);
-            if (FRAME_Buffer.Byte7 != 0) SetTime = 1;
+        if (C1RXFUL1bits.RXFUL6) { //ID = 0x18ABCDEF
+            CANDataFrame.SID = (ecan1msgBuf[6][0] & 0x1ffc) >> 2;
+            CANDataFrame.EID = ((uint32_t) (ecan1msgBuf[6][1] & 0x0fff) << 6) + ((ecan1msgBuf[6][2]& 0xfc00) >> 10);
+            CANDataFrame.IDE_BIT = ecan1msgBuf[6][0] & 0x0001;
+            CANDataFrame.DLC = ecan1msgBuf[6][2] & 0x000f;
+            CANDataFrame.wordData0 = ecan1msgBuf[6][3];
+            CANDataFrame.wordData1 = ecan1msgBuf[6][4];
+            CANDataFrame.wordData2 = ecan1msgBuf[6][5];
+            CANDataFrame.wordData3 = ecan1msgBuf[6][6];
+            Now.year = CANDataFrame.byteData0;
+            Now.month = CANDataFrame.byteData1;
+            Now.date = CANDataFrame.byteData2;
+            Now.weekday = CANDataFrame.byteData3;
+            Now.hour = CANDataFrame.byteData4;
+            Now.min = CANDataFrame.byteData5;
+            Now.sec = CANDataFrame.byteData6;
+            if (CANDataFrame.byteData7 != 0) flagRTCCSetTime = 1;
             C1RXFUL1bits.RXFUL6 = 0;
         }
-        if (C1RXFUL1bits.RXFUL7) {
-            FRAME_Buffer.SID = (ecan1msgBuf[7][0] & 0x1ffc) >> 2;
-            FRAME_Buffer.EID = ((uint32_t) (ecan1msgBuf[7][1] & 0x0fff) << 6) + ((ecan1msgBuf[7][2]& 0xfc00) >> 10);
-            if (FRAME_Buffer.EID & 0x01) LED_Toggle(LED_D3);
-            LED_Off(LED_D2);
+        if (C1RXFUL1bits.RXFUL7) { //ID = 0x30
+            CANDataFrame.SID = (ecan1msgBuf[7][0] & 0x1ffc) >> 2;
+            CANDataFrame.EID = ((uint32_t) (ecan1msgBuf[7][1] & 0x0fff) << 6) + ((ecan1msgBuf[7][2]& 0xfc00) >> 10);
+            if (CANDataFrame.EID & 0x01) LEDToggle(LED_D3);
             C1RXFUL1bits.RXFUL7 = 0;
         }
-        CANidentifier = ((uint32_t) FRAME_Buffer.SID << 18) + FRAME_Buffer.EID;
+        CANIdentifier = ((uint32_t) CANDataFrame.SID << 18) + CANDataFrame.EID;
         Nop();
     }
 }
 
-uint8_t I2C_Check_Device(uint8_t ADDRESS, i2c_modules MODULES) {
+uint8_t CheckI2CDevice(uint8_t ADDRESS, I2CModules_t MODULES) {
     uint16_t timeout = 0;
+    I2C1_MESSAGE_STATUS I2C1MessageStatus;
+    I2C2_MESSAGE_STATUS I2C2MessageStatus;
     if (MODULES == I2C1) {
-        I2C1_MasterWrite(0x00, 0x00, ADDRESS, &i2c1_msg_status);
-        while (i2c1_msg_status == I2C1_MESSAGE_PENDING) {
-            if (timeout == MAX_TRY) {
+        timeout = 0;
+        I2C1_MasterWrite(0x00, 0x00, ADDRESS, &I2C1MessageStatus);
+        while (I2C1MessageStatus == I2C1_MESSAGE_PENDING) {
+            if (timeout == I2C_MAX_TRY) {
                 return 0;
             } else {
                 ++timeout;
             }
         }
-        if (i2c1_msg_status == I2C1_MESSAGE_COMPLETE) {
+        if (I2C1MessageStatus == I2C1_MESSAGE_COMPLETE) {
             return 1;
         } else {
             return 0;
         }
     } else if (MODULES == I2C2) {
-        I2C2_MasterWrite(0x00, 0x00, ADDRESS, &i2c2_msg_status);
-        while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
-            if (timeout == MAX_TRY) {
+        timeout = 0;
+        I2C2_MasterWrite(0x00, 0x00, ADDRESS, &I2C2MessageStatus);
+        while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+            if (timeout == I2C_MAX_TRY) {
                 return 0;
             } else {
                 ++timeout;
             }
         }
-        if (i2c2_msg_status == I2C2_MESSAGE_COMPLETE) {
+        if (I2C2MessageStatus == I2C2_MESSAGE_COMPLETE) {
             return 1;
         } else {
             return 0;
@@ -815,10 +732,10 @@ uint8_t I2C_Check_Device(uint8_t ADDRESS, i2c_modules MODULES) {
     return 0;
 }
 
-void initial_LCD(void) {
-    I2C_LCD.BL = I2C_STATUS.Enale = 1;
-    if (I2C_STATUS.Enale) {
-        I2C_STATUS._4bit = 1;
+void LCD_Initialize(void) {
+    I2CLCD.BL = I2CStatus.Enale = 1;
+    if (I2CStatus.Enale) {
+        I2CStatus.n8bit_4bit = 1;
         LCD_WriteInstruction(0x3);
 #ifndef USING_SIMULATOR
         __delay_us(3000); /*wait time > 4.5ms*/
@@ -839,14 +756,14 @@ void initial_LCD(void) {
         __delay_us(100); /*wait time > 100us*/
 #endif
 
-        I2C_STATUS._4bit = 0;
+        I2CStatus.n8bit_4bit = 0;
     }
-    LCD_WriteInstruction(FOUR_BIT);
+    LCD_WriteInstruction(LCD_FOUR_BIT);
 #ifndef USING_SIMULATOR
     __delay_us(100); /*wait time > 100us*/
 #endif
 
-    LCD_WriteInstruction(CURSOR_ON);
+    LCD_WriteInstruction(LCD_CURSOR_ON);
 #ifndef USING_SIMULATOR
     __delay_us(1800); /*wait time > 1.6ms*/
 #endif
@@ -856,75 +773,68 @@ void initial_LCD(void) {
 void LCD_WriteInstruction(uint8_t Instruction) {
     uint8_t LCD_Instruction[4];
     uint8_t *Temporary = LCD_Instruction;
-    uint8_t length;
-    uint16_t TimeOut;
-    I2C_LCD.RS = 0;
-    I2C_LCD.RW = 0;
-    I2C_ADRRESS.Address = SLAVE_I2C_LCD_ADDRESS;
-    I2C_ADRRESS.R_nW = 0;
-    length = 2;
-    if (!I2C_STATUS._4bit) {
-        I2C_LCD.D7_D4 = ((Instruction & 0xF0) >> 4) &0x0F;
-        I2C_LCD.EN = 1;
-        *Temporary++ = I2C_LCD.Byte;
-        I2C_LCD.EN = 0;
-        *Temporary++ = I2C_LCD.Byte;
+    uint8_t length = 2;
+    uint16_t i2c_PendingTimeout;
+    //I2C1_MESSAGE_STATUS I2C1MessageStatus;
+    I2C2_MESSAGE_STATUS I2C2MessageStatus;
+    I2CLCD.RS = 0;
+    I2CLCD.RW = 0;
+    I2CAddress.Address = SLAVE_I2C_LCD_ADDRESS;
+    I2CAddress.R_nW = 0;
+    if (!I2CStatus.n8bit_4bit) {
+        I2CLCD.D7_D4 = ((Instruction & 0xF0) >> 4) &0x0F;
+        I2CLCD.EN = 1;
+        *Temporary++ = I2CLCD.byteData;
+        I2CLCD.EN = 0;
+        *Temporary++ = I2CLCD.byteData;
         length = 4;
-
     }
-    I2C_LCD.D7_D4 = (Instruction & 0x0F);
-    I2C_LCD.EN = 1;
-    *Temporary++ = I2C_LCD.Byte;
-    I2C_LCD.EN = 0;
-    *Temporary++ = I2C_LCD.Byte;
-    I2C2_MasterWrite(LCD_Instruction, length, I2C_ADRRESS.Address, &i2c2_msg_status);
-    TimeOut = 0;
+    I2CLCD.D7_D4 = (Instruction & 0x0F);
+    I2CLCD.EN = 1;
+    *Temporary++ = I2CLCD.byteData;
+    I2CLCD.EN = 0;
+    *Temporary++ = I2CLCD.byteData;
+    I2C2_MasterWrite(LCD_Instruction, length, I2CAddress.Address, &I2C2MessageStatus);
+    i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
-    while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
-        // add some delay here
-
-        // timeout checking
-        // check for max retry and skip this byte
-        if (TimeOut == 1500) {
+    /*while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+        if (i2c_PendingTimeout == 1500) {
             break;
-        } else TimeOut++;
-    }
+        } else i2c_PendingTimeout++;
+    }*/
 #endif
 }
 
 void LCD_WriteData(uint8_t DATA) {
     uint8_t LCD_Data[4];
     uint8_t *Temporary = LCD_Data;
-    uint8_t length;
-    uint16_t slaveTimeOut;
-    I2C_LCD.RS = 1;
-    I2C_LCD.RW = 0;
-    I2C_ADRRESS.Address = SLAVE_I2C_LCD_ADDRESS;
-    I2C_ADRRESS.R_nW = 0;
-    length = 4;
-    I2C_LCD.D7_D4 = ((DATA & 0xF0) >> 4) &0x0F;
-    I2C_LCD.EN = 1;
-    *Temporary++ = I2C_LCD.Byte;
-    I2C_LCD.EN = 0;
-    *Temporary++ = I2C_LCD.Byte;
+    uint8_t length = 4;
+    uint16_t i2c_PendingTimeout;
+    //I2C1_MESSAGE_STATUS I2C1MessageStatus;
+    I2C2_MESSAGE_STATUS I2C2MessageStatus;
+    I2CLCD.RS = 1;
+    I2CLCD.RW = 0;
+    I2CAddress.Address = SLAVE_I2C_LCD_ADDRESS;
+    I2CAddress.R_nW = 0;
+    I2CLCD.D7_D4 = ((DATA & 0xF0) >> 4) &0x0F;
+    I2CLCD.EN = 1;
+    *Temporary++ = I2CLCD.byteData;
+    I2CLCD.EN = 0;
+    *Temporary++ = I2CLCD.byteData;
 
-    I2C_LCD.D7_D4 = (DATA & 0x0F);
-    I2C_LCD.EN = 1;
-    *Temporary++ = I2C_LCD.Byte;
-    I2C_LCD.EN = 0;
-    *Temporary++ = I2C_LCD.Byte;
-    I2C2_MasterWrite(LCD_Data, length, I2C_ADRRESS.Address, &i2c2_msg_status);
-    slaveTimeOut = 0;
+    I2CLCD.D7_D4 = (DATA & 0x0F);
+    I2CLCD.EN = 1;
+    *Temporary++ = I2CLCD.byteData;
+    I2CLCD.EN = 0;
+    *Temporary++ = I2CLCD.byteData;
+    I2C2_MasterWrite(LCD_Data, length, I2CAddress.Address, &I2C2MessageStatus);
+    i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
-    while (i2c2_msg_status == I2C2_MESSAGE_PENDING) {
-        // add some delay here
-
-        // timeout checking
-        // check for max retry and skip this byte
-        if (slaveTimeOut == 1500) {
+    /*while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+        if (i2c_PendingTimeout == 1500) {
             break;
-        } else slaveTimeOut++;
-    }
+        } else i2c_PendingTimeout++;
+    }*/
 #endif
 }
 
@@ -937,9 +847,12 @@ void LCD_PutROMString(const uint8_t *String) {
     }
 }
 
-void LCD_Set_Cursor(uint8_t CurY, uint8_t CurX) {
+void LCD_SetCursor(uint8_t CurY, uint8_t CurX) {
     LCD_WriteInstruction(0x80 + CurY * 0x40 + CurX);
 #ifndef USING_SIMULATOR
     __delay_us(50);
 #endif
 }
+/**
+ End of File
+ */

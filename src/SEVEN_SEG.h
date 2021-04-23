@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-    void LINE_12_Initial(void);
-    void SEVEN_SEGMENT_SCAN(void);
+    void LINE_12_Initialize(void);
+    void Scan7Segment(void);
     void LINE_12_Write_Default(void);
 
 

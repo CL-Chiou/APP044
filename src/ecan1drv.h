@@ -47,14 +47,14 @@ extern "C" {
     // Section: Interface Routines
     // *****************************************************************************
     // *****************************************************************************
-     void Ecan1WriteRxAcptFilter(int16_t n, int32_t identifier, uint16_t exide, uint16_t bufPnt, uint16_t maskSel);
-     void Ecan1WriteRxAcptMask(int16_t m, int32_t identifierMask, uint16_t mide, uint16_t exide);
+    void Ecan1WriteRxAcptFilter(int16_t n, int32_t identifier, uint16_t exide, uint16_t bufPnt, uint16_t maskSel);
+    void Ecan1WriteRxAcptMask(int16_t m, int32_t identifierMask, uint16_t mide, uint16_t exide);
 
-     void Ecan1WriteTxMsgBufId(uint16_t buf, int32_t txIdentifier, uint16_t ide, uint16_t remoteTransmit);
-     void Ecan1WriteTxMsgBufData(uint16_t buf, uint16_t dataLength, uint16_t data1, uint16_t data2,
+    void Ecan1WriteTxMsgBufId(uint16_t buf, int32_t txIdentifier, uint16_t ide, uint16_t remoteTransmit);
+    void Ecan1WriteTxMsgBufData(uint16_t buf, uint16_t dataLength, uint16_t data1, uint16_t data2,
             uint16_t data3, uint16_t data4);
 
-     void Ecan1DisableRXFilter(int16_t n);
+    void Ecan1DisableRXFilter(int16_t n);
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 }

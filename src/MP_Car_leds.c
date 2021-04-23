@@ -39,6 +39,7 @@
 
 #define INPUT  1
 #define OUTPUT 0
+
 /*********************************************************************
  * Function: void LED_On(LED led);
  *
@@ -55,30 +56,29 @@
  * Output: none
  *
  ********************************************************************/
-void LED_On ( LED led )
-{
-    switch (led)
-    {
+void LEDTurnOn(LED led) {
+    switch (led) {
         case LED_D1:
-            LED_D1_LAT = LED_ON ;
-            break ;
-            
+            LED_D1_LAT = LED_ON;
+            break;
+
         case LED_D2:
-            LED_D2_LAT = LED_ON ;
-            break ;
+            LED_D2_LAT = LED_ON;
+            break;
 
         case LED_D3:
-            LED_D3_LAT = LED_ON ;
-            break ;
-            
+            LED_D3_LAT = LED_ON;
+            break;
+
         case LED_D4:
-            LED_D4_LAT = LED_ON ;
-            break ;            
+            LED_D4_LAT = LED_ON;
+            break;
 
         case LED_NONE:
-            break ;
+            break;
     }
 }
+
 /*********************************************************************
  * Function: void LED_Off(LED led);
  *
@@ -95,30 +95,29 @@ void LED_On ( LED led )
  * Output: none
  *
  ********************************************************************/
-void LED_Off ( LED led )
-{
-    switch (led)
-    {
+void LEDTurnOff(LED led) {
+    switch (led) {
         case LED_D1:
-            LED_D1_LAT = LED_OFF ;
-            break ;        
-        
+            LED_D1_LAT = LED_OFF;
+            break;
+
         case LED_D2:
-            LED_D2_LAT = LED_OFF ;
-            break ;
+            LED_D2_LAT = LED_OFF;
+            break;
 
         case LED_D3:
-            LED_D3_LAT = LED_OFF ;
-            break ;
-            
-          case LED_D4:
-            LED_D4_LAT = LED_OFF ;
-            break ;          
+            LED_D3_LAT = LED_OFF;
+            break;
+
+        case LED_D4:
+            LED_D4_LAT = LED_OFF;
+            break;
 
         case LED_NONE:
-            break ;
+            break;
     }
 }
+
 /*********************************************************************
  * Function: void LED_Toggle(LED led);
  *
@@ -135,30 +134,29 @@ void LED_Off ( LED led )
  * Output: none
  *
  ********************************************************************/
-void LED_Toggle ( LED led )
-{
-    switch (led)
-    {
+void LEDToggle(LED led) {
+    switch (led) {
         case LED_D1:
-            LED_D1_LAT ^= 1 ;
-            break ;
-        
+            LED_D1_LAT ^= 1;
+            break;
+
         case LED_D2:
-            LED_D2_LAT ^= 1 ;
-            break ;
+            LED_D2_LAT ^= 1;
+            break;
 
         case LED_D3:
-            LED_D3_LAT ^= 1 ;
-            break ;
+            LED_D3_LAT ^= 1;
+            break;
 
-         case LED_D4:
-            LED_D4_LAT ^= 1 ;
-            break ;           
-            
+        case LED_D4:
+            LED_D4_LAT ^= 1;
+            break;
+
         case LED_NONE:
-            break ;
+            break;
     }
 }
+
 /*********************************************************************
  * Function: bool LED_Get(LED led);
  *
@@ -175,28 +173,27 @@ void LED_Toggle ( LED led )
  * Output: true if on, false if off
  *
  ********************************************************************/
-bool LED_Get ( LED led )
-{
-    switch (led)
-    {
+bool LEDGet(LED led) {
+    switch (led) {
         case LED_D1:
-            return ( ( LED_D1_LAT == LED_ON ) ? true : false ) ;  
-            
+            return ( (LED_D1_LAT == LED_ON) ? true : false);
+
         case LED_D2:
-            return ( ( LED_D2_LAT == LED_ON ) ? true : false ) ;
+            return ( (LED_D2_LAT == LED_ON) ? true : false);
 
         case LED_D3:
-            return ( ( LED_D3_LAT == LED_ON ) ? true : false ) ;
-            
+            return ( (LED_D3_LAT == LED_ON) ? true : false);
+
         case LED_D4:
-            return ( ( LED_D4_LAT == LED_ON ) ? true : false ) ;
+            return ( (LED_D4_LAT == LED_ON) ? true : false);
 
         case LED_NONE:
-            return false ;
+            return false;
 
     }
-    return false ;
+    return false;
 }
+
 /*********************************************************************
  * Function: void LED_Enable(LED led);
  *
@@ -212,55 +209,51 @@ bool LED_Get ( LED led )
  * Output: none
  *
  ********************************************************************/
-void LED_Enable ( LED led )
-{
-    switch (led)
-    {
-        
+void LEDEnable(LED led) {
+    switch (led) {
+
         case LED_D1:
-            LED_D1_TRIS = OUTPUT ;
-            break ;
-            
+            LED_D1_TRIS = OUTPUT;
+            break;
+
         case LED_D2:
-            LED_D2_TRIS = OUTPUT ;
-            break ;
+            LED_D2_TRIS = OUTPUT;
+            break;
 
         case LED_D3:
-            LED_D3_TRIS = OUTPUT ;
-            break ;
+            LED_D3_TRIS = OUTPUT;
+            break;
 
         case LED_D4:
-            LED_D4_TRIS = OUTPUT ;
-            break ;
-            
+            LED_D4_TRIS = OUTPUT;
+            break;
+
         case LED_NONE:
-            break ;
+            break;
     }
 }
 
-void LED_Disable ( LED led )
-{
-    switch (led)
-    {
-        
+void LEDDisable(LED led) {
+    switch (led) {
+
         case LED_D1:
-            LED_D1_TRIS = INPUT ;
-            break ;
-            
+            LED_D1_TRIS = INPUT;
+            break;
+
         case LED_D2:
-            LED_D2_TRIS = INPUT ;
-            break ;
+            LED_D2_TRIS = INPUT;
+            break;
 
         case LED_D3:
-            LED_D3_TRIS = INPUT ;
-            break ;
+            LED_D3_TRIS = INPUT;
+            break;
 
         case LED_D4:
-            LED_D4_TRIS = INPUT ;
-            break ;
-            
+            LED_D4_TRIS = INPUT;
+            break;
+
         case LED_NONE:
-            break ;
+            break;
     }
 }
 

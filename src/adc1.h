@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-void ADC1_Initial(void);
+void ADC1_Initialize(void);
 
 
 #ifdef	__cplusplus

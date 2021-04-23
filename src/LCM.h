@@ -8,18 +8,20 @@
 #ifndef LCM_H
 #define	LCM_H
 
+#include "Common.h"
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    void LCM_Init(void);
-    void LCM_SetCursor( unsigned char Y, unsigned char X );
-    void LCM_PutASCII(unsigned char Ascii);
-    void LCM_PutHex(unsigned char Hex);
-    void LCM_PutROMString(const unsigned char * String);
-    void LCM_PutRAMString(unsigned char *String);
-    void LCM_PutNumber(unsigned int Number, unsigned char Digit);
-    
+    void LCM_Initialize(void);
+    void LCM_SetCursor(uint8_t Y, uint8_t X);
+    void LCM_PutASCII(uint8_t Ascii);
+    void LCM_PutHex(uint8_t Hex);
+    void LCM_PutROMString(const uint8_t *String);
+    void LCM_PutRAMString(uint8_t *String);
+    void LCM_PutNumber(uint16_t Number, uint8_t Digit);
+
     // LCD Module Commands
 #define Disp_2Line_4Bit_5x8Dots		0x28
 #define Disp_2Line_8Bit_5x8Dots		0x38

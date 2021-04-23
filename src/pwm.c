@@ -8,7 +8,7 @@
 
 #include "Common.h"
 
-void PWM_Initial(void) {
+void PWM_Initialize(void) {
     /* Set PWM Period on Primary Time Base */ /*FPWM = FOSC / (PTPER * PWM Input Clock Prescaler); 3200 = 80,000,000 / (25k(Hz)*1)*/
     PTPER = 3200;
 
