@@ -28,8 +28,8 @@ void __attribute__((__interrupt__, no_auto_psv)) _DMA2Interrupt(void) {
     ChannelVolt_mV[0] = adc2volt_3_3V(ADC1BUF[AN0]); // Read the AN0:VR1_8bit conversion result
     ChannelVolt_mV[1] = adc2volt_3_3V(ADC1BUF[AN1]); // Read the AN1:ANIN4 conversion result
     ChannelVolt_mV[2] = adc2volt_3_3V(ADC1BUF[AN2]); // Read the AN2:ANIN3 conversion result
-    DMA0CONbits.CHEN = 1; // Enable DMA0 channel
-    DMA0REQbits.FORCE = 1; // Manual mode:Kick-start the 1st transfer
+//    DMA0CONbits.CHEN = 1; // Enable DMA0 channel
+//    DMA0REQbits.FORCE = 1; // Manual mode:Kick-start the 1st transfer
     VR1_8bit = ADC1BUF[AN0] >> 2;
     MDC = ChannelVolt_mV[0];
     IFS1bits.DMA2IF = 0; // Clear the DMA2 Interrupt Flag

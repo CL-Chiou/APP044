@@ -4,6 +4,19 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <logicalFolder name="usb" displayName="usb" projectFiles="true">
+        <logicalFolder name="utilities" displayName="utilities" projectFiles="true">
+        </logicalFolder>
+        <itemPath>src/usb/usb.h</itemPath>
+        <itemPath>src/usb/usb_ch9.h</itemPath>
+        <itemPath>src/usb/usb_common.h</itemPath>
+        <itemPath>src/usb/usb_device.h</itemPath>
+        <itemPath>src/usb/usb_device_cdc.h</itemPath>
+        <itemPath>src/usb/usb_device_config.h</itemPath>
+        <itemPath>src/usb/usb_device_local.h</itemPath>
+        <itemPath>src/usb/usb_hal.h</itemPath>
+        <itemPath>src/usb/usb_hal_dspic33e.h</itemPath>
+      </logicalFolder>
       <itemPath>src/Common.h</itemPath>
       <itemPath>src/Timers.h</itemPath>
       <itemPath>src/UART1.h</itemPath>
@@ -29,6 +42,13 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <logicalFolder name="usb" displayName="usb" projectFiles="true">
+        <itemPath>src/usb/example_mcc_usb_cdc.c</itemPath>
+        <itemPath>src/usb/usb_descriptors.c</itemPath>
+        <itemPath>src/usb/usb_device.c</itemPath>
+        <itemPath>src/usb/usb_device_cdc.c</itemPath>
+        <itemPath>src/usb/usb_device_events.c</itemPath>
+      </logicalFolder>
       <itemPath>src/APP044_Config.c</itemPath>
       <itemPath>src/Timers.c</itemPath>
       <itemPath>src/UART1.c</itemPath>
@@ -54,9 +74,6 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
-  <sourceRootList>
-    <Elem>.</Elem>
-  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="ICD" type="2">
@@ -78,7 +95,6 @@
       <compileType>
         <linkerTool>
           <linkerLibItems>
-            <linkerLibFileItem>MU810_CDC_LIBRARY.X.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>
@@ -116,7 +132,7 @@
         <property key="enable-short-double" value="false"/>
         <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
-        <property key="extra-include-directories" value=""/>
+        <property key="extra-include-directories" value="src\usb"/>
         <property key="isolate-each-function" value="false"/>
         <property key="keep-inline" value="false"/>
         <property key="oXC16gcc-align-arr" value="false"/>
@@ -148,7 +164,7 @@
         <property key="assembler-symbols" value=""/>
         <property key="expand-macros" value="false"/>
         <property key="extra-include-directories-for-assembler" value=""/>
-        <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="extra-include-directories-for-preprocessor" value="src\usb"/>
         <property key="false-conditionals" value="false"/>
         <property key="keep-locals" value="false"/>
         <property key="list-assembly" value="false"/>
@@ -414,7 +430,7 @@
         <property key="memories.programmemory.ranges" value="0-7fffff"/>
         <property key="poweroptions.powerenable" value="false"/>
         <property key="programmerToGoFilePath"
-                  value="C:/Users/user/MPLABXProjects/APP044.X/debug/ICD/APP044_ptg"/>
+                  value="C:/Users/user/MPLABXProjects/APP044/debug/ICD/ICD_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.ledbrightness" value="5"/>
@@ -921,7 +937,6 @@
       <compileType>
         <linkerTool>
           <linkerLibItems>
-            <linkerLibFileItem>MU810_CDC_LIBRARY.X.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>

@@ -21,6 +21,10 @@ of their application. */
 
 void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
     INTCON1bits.OSCFAIL = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
@@ -29,6 +33,10 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
     INTCON1bits.ADDRERR = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
@@ -36,6 +44,10 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _HardTrapError(void) {
     INTCON4bits.SGHT = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
@@ -43,6 +55,10 @@ void __attribute__((interrupt, no_auto_psv)) _HardTrapError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
     INTCON1bits.STKERR = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
@@ -50,6 +66,10 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
     INTCON1bits.MATHERR = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
@@ -57,6 +77,10 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
     INTCON1bits.DMACERR = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
@@ -64,10 +88,18 @@ void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _SoftTrapError(void) {
     INTCON2bits.SWTRAP = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }
 //================================================================
 
 void __attribute__((interrupt, no_auto_psv)) _ReservedTrap7(void) { // INTCON1bits.DMACERR = 0; //Clear the trap flag
+#ifdef __DEBUG    
+    __builtin_software_breakpoint();
+    /* If we are in debug mode, cause a software breakpoint in the debugger */
+#endif
     while (1);
 }

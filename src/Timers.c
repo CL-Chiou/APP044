@@ -14,6 +14,7 @@ extern RealTimeClock_t CLOCK;
 
 uint16_t T1Cnt, T1Cnt_1ms, T1Cnt_1000ms;
 uint8_t T1Cnt_RLED_Period;
+extern uint16_t TCnt_50ms;
 
 /*LED*/
 extern uint8_t LED2Blink, LED2BlinkDuty;
@@ -67,6 +68,11 @@ void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt(void) {
 
 void __attribute__((__interrupt__, no_auto_psv)) _T3Interrupt(void) {
     IFS0bits.T3IF = 0;
+    if (++TCnt_50ms >= 50) {
+        TCnt_50ms = 0x00;
+        DMA0CONbits.CHEN = 1; // Enable DMA0 channel
+        DMA0REQbits.FORCE = 1; // Manual mode:Kick-start the 1st transfer
+    }
 }
 
 void Timer1_Initialize(void) { //20kHz
@@ -96,6 +102,6 @@ void Timer3_Initialize(void) {
 #endif
     IPC2bits.T3IP = 0x01; // Set Timer3 Interrupt Priority Level
     IFS0bits.T3IF = 0; // Clear Timer3 Interrupt Flag
-    IEC0bits.T3IE = 0;
+    IEC0bits.T3IE = 1;
     T3CONbits.TON = 1;
 }

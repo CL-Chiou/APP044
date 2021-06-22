@@ -26,7 +26,6 @@ extern "C" {
 #include "i2c1.h"
 #include "i2c2.h"
 #include "spi1.h"
-#include "../Include_Files/LIB_USB_CDC_MU810.h"
 #include "MP_Car_leds.h"
 #include "ecan1_config.h"
 #include "ecan1drv.h"
@@ -35,6 +34,7 @@ extern "C" {
 #include "MCP79410.h"
 #include "MCP4551.h"
 #include "MCP4922.h"
+#include "usb/usb.h"
 
     /* check if build is for a real debug tool */
 #ifdef __MPLAB_DEBUGGER_SIMULATOR
@@ -43,7 +43,7 @@ extern "C" {
 
     /*UART1*/
 #define U1TX_MSG_BUF_LENGTH 24
-#define U1BAUDRATE 115200
+#define U1BAUDRATE 9600
 #define U1BRP_VAL ((FCY/U1BAUDRATE)/4)-1
     /* CAN1 Baud Rate Configuration */
 #define CAN1_BITRATE 500000
@@ -300,6 +300,18 @@ extern "C" {
         dsw5,
         dsw6,
     } DebounceSwitch_t;
+
+#define mData(DataFrame,buf)   \
+{                                   \
+    DataFrame.SID = (ecan1msgBuf[buf][0] & 0x1ffc) >> 2;\
+    DataFrame.EID = ((uint32_t) (ecan1msgBuf[buf][1] & 0x0fff) << 6) + ((ecan1msgBuf[buf][2]& 0xfc00) >> 10);\
+    DataFrame.IDE_BIT = ecan1msgBuf[buf][0] & 0x0001;\
+    DataFrame.DLC = ecan1msgBuf[buf][2] & 0x000f;\
+    DataFrame.wordData0 = ecan1msgBuf[buf][3];\
+    DataFrame.wordData1 = ecan1msgBuf[buf][4];\
+    DataFrame.wordData2 = ecan1msgBuf[buf][5];\
+    DataFrame.wordData3 = ecan1msgBuf[buf][6];\
+}
 
     void DMA0_Initialize(void); //UART1 transmitter
     void DMA1_Initialize(void); //UART1 receiver
