@@ -13,11 +13,11 @@ extern TimeFlag_t FLAG;
 extern RealTimeClock_t CLOCK;
 
 uint16_t T1Cnt, T1Cnt_1ms, T1Cnt_1000ms;
-uint8_t T1Cnt_RLED_Period;
+uint8_t T1Cnt_RLED_Period, T1Cnt_OLED_Period;
 extern uint16_t TCnt_50ms;
 
 /*LED*/
-extern uint8_t LED2Blink, LED2BlinkDuty;
+extern uint8_t LED2Blink, LED2BlinkDuty, LED3BlinkDuty;
 /*ADC*/
 extern int ADCValues[8];
 /*USB CDC*/
@@ -37,6 +37,7 @@ void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt(void) {
     T1Cnt++;
     T1Cnt_1ms++;
     T1Cnt_RLED_Period++;
+    T1Cnt_OLED_Period++;
     BzTCnt++;
     if (T1Cnt >= 10000) {
         T1Cnt = 0;
@@ -56,10 +57,17 @@ void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt(void) {
         }
     }
     if (T1Cnt_RLED_Period >= 100) T1Cnt_RLED_Period = 0;
-    if (T1Cnt_RLED_Period <= LED2BlinkDuty) {
+    if (T1Cnt_RLED_Period < LED2BlinkDuty) {
         LEDTurnOn(LED_D2);
     } else {
         LEDTurnOff(LED_D2);
+    }
+
+    if (T1Cnt_OLED_Period >= 100) T1Cnt_OLED_Period = 0;
+    if (T1Cnt_OLED_Period < LED3BlinkDuty) {
+        LEDTurnOn(LED_D3);
+    } else {
+        LEDTurnOff(LED_D3);
     }
     if (BzTCnt <= 4 && BzOutput) Buzzer = 1;
     else Buzzer = 0;

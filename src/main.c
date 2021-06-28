@@ -34,7 +34,7 @@ uint8_t CDCRecvBuffer[64];
 bool flagOpenUSBCDCSerial;
 
 /*LED*/
-uint8_t LED2Blink, LED2BlinkDuty;
+uint8_t LED2Blink, LED2BlinkDuty, LED3BlinkDuty;
 
 /*Buzzer*/
 uint8_t BzTCnt;
@@ -83,6 +83,8 @@ void CheckSwitch(void);
 void Debounce(uint16_t Input, DebounceSwitch_t Switch);
 void CheckBzMode(void);
 void CheckLEDMode(void);
+void LED2Stateflow(void);
+void LED3Stateflow(void);
 void UpdateClock(void);
 void Time_Buf_to_LINE1(void);
 void EXT_ADC_Buf_to_LINE2(void);
@@ -268,7 +270,9 @@ void Time_Execute(void) {
                     numbDatas = getsUSBUSART(CDCRecvBuffer, sizeof (CDCRecvBuffer)); //until the CDCRecvBuffer is free.
                     if (numbDatas == 3) {
                         Nop();
-                        if (CDCRecvBuffer[0] == '1') {
+                        if (CDCRecvBuffer[0] == '0') {
+                            BzMode._0 = 1;
+                        } else if (CDCRecvBuffer[0] == '1') {
                             BzMode._1 = 1;
                         } else if (CDCRecvBuffer[0] == '2') {
                             BzMode._2 = 1;
@@ -588,15 +592,75 @@ void Debounce(uint16_t Input, DebounceSwitch_t Switch) {
 }
 
 void CheckLEDMode(void) {
-    static uint8_t LED2BlinkCnt = 0;
+    LED2Stateflow();
+    LED3Stateflow();
+}
+
+void LED2Stateflow(void) {
+    static uint8_t State = 0;
+    static uint16_t count = 0;
     if (LED2Blink == 1) {
-        if (++LED2BlinkCnt >= 50) {
-            LED2BlinkCnt = 0;
-            LED2Blink = 0;
+        switch (State) {
+            default:
+                LED2BlinkDuty = 100;
+                State = 0;
+            case 0:
+                if (count < 50) count++;
+                else {
+                    count = 0;
+                    LED2BlinkDuty = 5;
+                    State++;
+                }
+                break;
+            case 1:
+                if (count < 50) count++;
+                else {
+                    count = 0;
+                    LED2BlinkDuty = 100;
+                    State++;
+                }
+                break;
+            case 2:
+                if (count < 50) count++;
+                else {
+                    count = 0;
+                    LED2Blink = 0;
+                    State++;
+                }
+                break;
         }
-        LED2BlinkDuty = 100;
     } else {
         LED2BlinkDuty = 5;
+    }
+}
+
+void LED3Stateflow(void) {
+    static uint8_t State = 0;
+    static uint16_t count = 0;
+    switch (State) {
+        default:
+            State = 0;
+        case 0:
+            if (count < 10) count++;
+            else {
+                count = 0;
+                if (++LED3BlinkDuty >= 100) State++;
+            }
+            break;
+        case 1:
+            if (count < 10) count++;
+            else {
+                count = 0;
+                if (--LED3BlinkDuty <= 0) State++;
+            }
+            break;
+        case 2:
+            if (count < 2000) count++;
+            else {
+                count = 0;
+                State++;
+            }
+            break;
     }
 }
 
@@ -653,11 +717,11 @@ void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
     if (C1INTFbits.RBIF) {
         C1INTFbits.RBIF = 0;
         if (C1RXFUL1bits.RXFUL4) { //ID = 0x40
-            mData(CANDataFrame,4);
+            mData(CANDataFrame, 4);
             C1RXFUL1bits.RXFUL4 = 0;
         }
         if (C1RXFUL1bits.RXFUL6) { //ID = 0x18ABCDEF
-            mData(CANDataFrame,6);
+            mData(CANDataFrame, 6);
             Now.year = CANDataFrame.byteData0;
             Now.month = CANDataFrame.byteData1;
             Now.date = CANDataFrame.byteData2;
@@ -669,7 +733,7 @@ void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
             C1RXFUL1bits.RXFUL6 = 0;
         }
         if (C1RXFUL1bits.RXFUL7) { //ID = 0x30
-            mData(CANDataFrame,7);
+            mData(CANDataFrame, 7);
             if (CANDataFrame.EID & 0x01) LEDToggle(LED_D3);
             C1RXFUL1bits.RXFUL7 = 0;
         }
