@@ -23,11 +23,11 @@ uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits Oper
     if (OperationBits != ReadData) {
         if (MemoryAddress == Volatile_Wiper_1) MemoryAddress = Volatile_Wiper_0;
         I2C2_MasterWrite(Command.bData, 2, SLAVE_I2C2_MCP4551_ADDRESS, &I2C2MessageStatus);
-        /*while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+        while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
             if (i2c_PendingTimeout == SLAVE_I2C2_DEVICE_TIMEOUT) {
                 break;
             } else i2c_PendingTimeout++;
-        }*/
+        }
     } else {
         I2C2_MasterWriteTRBBuild(readTRB, Command.bData, 1, SLAVE_I2C2_MCP4551_ADDRESS);
         I2C2_MasterReadTRBBuild(&readTRB[1], RcvData, 2, SLAVE_I2C2_MCP4551_ADDRESS);

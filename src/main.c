@@ -96,8 +96,10 @@ void LCD_WriteData(uint8_t DATA);
 void LCD_SetCursor(uint8_t CurY, uint8_t CurX);
 void LCD_PutROMString(const uint8_t *String);
 
+void IIC_TEST(void);
+
 /*
-                         Main application
+Main application
  */
 int main(void) {
     // initialize the device
@@ -116,7 +118,7 @@ int main(void) {
     I2CDevice.MCP79410 = CheckI2CDevice(SLAVE_I2C1_MCP79410_REG_ADDRESS, I2C1);
     I2CDevice.MCP4551 = CheckI2CDevice(SLAVE_I2C2_MCP4551_ADDRESS, I2C2);
     /* Disable Watch Dog Timer */
-    RCONbits.SWDTEN = 1;
+    RCONbits.SWDTEN = 1; //4ms
     if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
         BzMode._0 = 1;
     }
@@ -270,12 +272,16 @@ void Time_Execute(void) {
                     numbDatas = getsUSBUSART(CDCRecvBuffer, sizeof (CDCRecvBuffer)); //until the CDCRecvBuffer is free.
                     if (numbDatas == 3) {
                         Nop();
-                        if (CDCRecvBuffer[0] == '0') {
-                            BzMode._0 = 1;
-                        } else if (CDCRecvBuffer[0] == '1') {
-                            BzMode._1 = 1;
-                        } else if (CDCRecvBuffer[0] == '2') {
-                            BzMode._2 = 1;
+                        switch (CDCRecvBuffer[0]) {
+                            case '0':
+                                BzMode._0 = 1;
+                                break;
+                            case '1':
+                                BzMode._1 = 1;
+                                break;
+                            case '2':
+                                BzMode._2 = 1;
+                                break;
                         }
                         LEDToggle(LED_D1);
                     }
@@ -301,7 +307,7 @@ void Time_Execute(void) {
 }
 
 void MultiTask(void) {
-    static uint8_t flagCAN_Tx1shot = 0, flagCAN_TxContinuous = 0, flagMusic1shot = 0;
+    static uint8_t flagCAN_Tx1shot = 0, flagCAN_TxContinuous = 0, flagMusic1shot = 0, Count = 0;
     switch (TASK) {
         default:
             TASK = 0;
@@ -404,6 +410,10 @@ void MultiTask(void) {
             Nop();
             break;
         case 10:
+            if (++Count >= 5) {
+                Count = 0;
+                IIC_TEST();
+            }
             Nop();
             break;
         case 11:
@@ -839,11 +849,11 @@ void LCD_WriteInstruction(uint8_t Instruction) {
     I2C2_MasterWrite(LCD_Instruction, length, I2CAddress.Address, &I2C2MessageStatus);
     i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
-    /*while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+    while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
         if (i2c_PendingTimeout == 1500) {
             break;
         } else i2c_PendingTimeout++;
-    }*/
+    }
 #endif
 }
 
@@ -872,11 +882,11 @@ void LCD_WriteData(uint8_t DATA) {
     I2C2_MasterWrite(LCD_Data, length, I2CAddress.Address, &I2C2MessageStatus);
     i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
-    /*while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+    while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
         if (i2c_PendingTimeout == 1500) {
             break;
         } else i2c_PendingTimeout++;
-    }*/
+    }
 #endif
 }
 
@@ -893,6 +903,31 @@ void LCD_SetCursor(uint8_t CurY, uint8_t CurX) {
     LCD_WriteInstruction(0x80 + CurY * 0x40 + CurX);
 #ifndef USING_SIMULATOR
     __delay_us(50);
+#endif
+}
+
+void IIC_TEST(void) {
+    I2C2_MESSAGE_STATUS I2C2MessageStatus;
+    uint8_t bLED[2] = {0x87, 0x00};
+    uint16_t i2c_PendingTimeout;
+    static uint8_t RollingCount = 0;
+    static bool nRising_Falling = 0;
+    if (nRising_Falling == 1) {
+        bLED[1] = --RollingCount;
+    } else {
+        bLED[1] = ++RollingCount;
+    }
+    if (RollingCount <= 0 || RollingCount >= 255) {
+        nRising_Falling ^= 1;
+    }
+    I2C2_MasterWrite(bLED, 2, 0x4F, &I2C2MessageStatus);
+    i2c_PendingTimeout = 0;
+#ifndef USING_SIMULATOR
+    while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
+        if (i2c_PendingTimeout == 1500) {
+            break;
+        } else i2c_PendingTimeout++;
+    }
 #endif
 }
 /**
