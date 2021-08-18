@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-    void LCM_Initialize(void);
+    void LCMInitialize(void);
     void LCM_SetCursor(uint8_t Y, uint8_t X);
     void LCM_PutASCII(uint8_t Ascii);
     void LCM_PutHex(uint8_t Hex);

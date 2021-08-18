@@ -202,7 +202,7 @@ extern "C" {
         </code>
      */
 
-    void I2C1_Initialize(void);
+    void I2C1Initialize(void);
 
 
     /**

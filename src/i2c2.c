@@ -45,6 +45,7 @@
  */
 
 #include "Common.h"
+#include "i2c2.h"
 
 /**
  Section: Data Types
@@ -188,7 +189,7 @@ static I2C2_TR_QUEUE_ENTRY *p_i2c2_current = NULL;
   Section: Driver Interface
  */
 
-void I2C2_Initialize(void) {
+void I2C2Initialize(void) {
 
     i2c2_object.pTrHead = i2c2_tr_queue;
     i2c2_object.pTrTail = i2c2_tr_queue;
@@ -520,8 +521,8 @@ static void I2C2_FunctionComplete(void) {
 }
 
 static void I2C2_Stop(I2C2_MESSAGE_STATUS completion_code) {
-    extern I2CLCDAddress_t I2CAddress;
-    extern I2CDevice_t I2CDevice;
+    extern xI2CLCDAddress_t I2CAddress;
+    extern xI2CDevice_t I2CDevice;
     // then send a stop
     I2C2_STOP_CONDITION_ENABLE_BIT = 1;
     if (completion_code != I2C2_MESSAGE_COMPLETE) {
@@ -538,6 +539,9 @@ static void I2C2_Stop(I2C2_MESSAGE_STATUS completion_code) {
                 break;
             case SLAVE_I2C2_MCP4551_ADDRESS:
                 I2CDevice.MCP4551 = 0;
+                break;
+            case SLAVE_I2C_PIC16F1939_ADDRESS:
+                I2CDevice.PIC16F1939 = 0;
                 break;
             default:
                 break;

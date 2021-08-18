@@ -2,31 +2,21 @@
  * File:   MCP79410.c
  * Author: user
  *
- * Created on 2020年12月21日, 上午 9:01
+ * Created on December 21, 2020, 9:01 AM
  */
 
-
 #include "Common.h"
+#include "MCP79410.h"
+#include "i2c1.h"
+#include "time.h"
 
-extern RealTimeClock_t CLOCK;
+extern xRealTimeClock_t SystemClock;
 extern I2C1_MESSAGE_STATUS I2C1MessageStatus;
 extern RTCC_t Now;
 
 void MCP79410_Initialize(void) {
     MCP79410_SetHourFormat(H24); //Set hour format to military time standard
     MCP79410_EnableVbat(); //Enable battery backup
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    RTCC_t curr_time = {tm.tm_sec, tm.tm_min, tm.tm_hour, tm.tm_wday, tm.tm_mday, tm.tm_mon + 1, ((tm.tm_year + 1900) - 2000)};
-
-    curr_time.year = 22;
-    curr_time.month = 2;
-    curr_time.date = 22;
-    curr_time.weekday = 2;
-    curr_time.hour = 22;
-    curr_time.min = 22;
-    curr_time.sec = 22;
-    MCP79410_SetTime(&curr_time);
     MCP79410_EnableOscillator(); //Start clock by enabling oscillator
 
 }
@@ -55,7 +45,7 @@ uint8_t MCP79410_IsRunning(void) {
 }
 
 void MCP79410_GetTime(void) {
-    Now.sec = MCP79410_bcd2dec(MCP79410_Command(RTCSEC, 0x00, Read) & (~START_32KHZ));
+    Now.sec = MCP79410_bcd2dec(MCP79410_Command(RTCSEC, 0x00, Read) & 0x7F);
     Now.min = MCP79410_bcd2dec(MCP79410_Command(RTCMIN, 0x00, Read));
 
     uint8_t hour_t = MCP79410_Command(RTCHOUR, 0x00, Read);
@@ -68,13 +58,13 @@ void MCP79410_GetTime(void) {
     Now.month = MCP79410_bcd2dec(MCP79410_Command(RTCMTH, 0x00, Read) & ~(LPYR));
     Now.year = MCP79410_bcd2dec(MCP79410_Command(RTCYEAR, 0x00, Read));
 
-    CLOCK.Year = Now.year;
-    CLOCK.Month = Now.month;
-    CLOCK.Date = Now.date;
-    CLOCK.Weekday = Now.weekday;
-    CLOCK.Hour = Now.hour;
-    CLOCK.Minute = Now.min;
-    CLOCK.Second = Now.sec;
+    SystemClock.Year = Now.year;
+    SystemClock.Month = Now.month;
+    SystemClock.Date = Now.date;
+    SystemClock.Weekday = Now.weekday;
+    SystemClock.Hour = Now.hour;
+    SystemClock.Minute = Now.min;
+    SystemClock.Second = Now.sec;
     Nop();
 
 }
@@ -399,7 +389,6 @@ uint8_t MCP79410_bcd2dec(uint8_t num) {
 }
 
 uint16_t MCP79410_Command(RTCCRegisterbits_t MemoryAddress, uint8_t data, I2CnWR_t nW_R) {
-    I2C1_MESSAGE_STATUS I2C1MessageStatus;
 #ifndef USING_SIMULATOR
     __delay_us(7);
 #endif
@@ -411,7 +400,7 @@ uint16_t MCP79410_Command(RTCCRegisterbits_t MemoryAddress, uint8_t data, I2CnWR
     if (nW_R == Write) {
         I2C1_MasterWrite(Command, 2, SLAVE_I2C1_MCP79410_REG_ADDRESS, &I2C1MessageStatus);
 #ifndef USING_SIMULATOR
-        /*while (I2C1MessageStatus == I2C1_MESSAGE_PENDING) {
+        while (I2C1MessageStatus == I2C1_MESSAGE_PENDING) {
             if (TimeOut == SLAVE_I2C1_DEVICE_TIMEOUT) {
                 return (0);
             } else TimeOut++;
@@ -419,7 +408,7 @@ uint16_t MCP79410_Command(RTCCRegisterbits_t MemoryAddress, uint8_t data, I2CnWR
                 return (0);
                 break;
             }
-        }*/
+        }
 #endif
         Nop();
     } else if (nW_R == Read) {

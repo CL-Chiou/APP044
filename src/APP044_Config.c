@@ -1,14 +1,3 @@
-// *****************************************************************************
-// *****************************************************************************
-// Section: Macros for Configuration Fuse Registers:
-// *****************************************************************************
-// *****************************************************************************
-/* Invoke macros to set up  device configuration fuse registers.The fuses will
-   select the oscillator source, power-up timers, watch-dog timers etc. The
-   macros are defined within the device header files. The configuration fuse
-   registers reside in Flash memory.
- */
- 
 // DSPIC33EP512MU810 Configuration Bit Settings
 
 // 'C' source line config statements
@@ -53,5 +42,3 @@
 
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
-
-#include <xc.h>

@@ -2,11 +2,13 @@
  * File:   MCP4922.c
  * Author: user
  *
- * Created on 2021年4月23日, 下午 5:02
+ * Created on April 23, 2021, 5:02 PM
  */
 
 
 #include "Common.h"
+#include "MCP4922.h"
+#include "spi1.h"
 
 mcp4922cmd DAC_A = {
     .nA_B = A,
@@ -22,7 +24,7 @@ mcp4922cmd DAC_A = {
     .Data11_0 = 0,
 };
 
-uint8_t SPITxCnt;
+uint8_t SPINumberOfTx;
 uint8_t SineIndex;
 
 
@@ -56,7 +58,7 @@ const uint16_t Sine[2][120] = {
 void MCP4922_2SineOutput(void) {
     DAC_A.Data11_0 = Sine[A][SineIndex];
     DAC_B.Data11_0 = Sine[B][SineIndex];
-    SPITxCnt = 2;
+    SPINumberOfTx = 2;
     nSS = 0;
     SPI1BUF = DAC_A.Int;
     if (++SineIndex >= 120) SineIndex = 0;

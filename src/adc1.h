@@ -12,7 +12,14 @@
 extern "C" {
 #endif
 
-void ADC1_Initialize(void);
+    enum {
+        AN3,
+        AN0,
+        AN1,
+        AN2
+    };
+    
+    void ADC1Initialize(void);
 
 
 #ifdef	__cplusplus

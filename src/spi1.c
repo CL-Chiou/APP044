@@ -48,6 +48,7 @@
  */
 
 #include "Common.h"
+#include "spi1.h"
 
 /**
  Section: File specific functions
@@ -60,18 +61,17 @@ uint16_t SPI1_ExchangeBuffer(uint8_t *pTransmitData, uint16_t byteCount, uint8_t
 /*DMA Buffer*/
 uint16_t SPI1_TXBUFFER[16];
 
-extern uint8_t SPITxCnt;
-extern mcp4922cmd DAC_A;
-extern mcp4922cmd DAC_B;
-
 volatile uint8_t SPITransmitDone;
+
+void (*SPI1_InterruptHandler)(void);
+static void SPI1CallBack(void);
 
 /**
  Section: Driver Interface Function Definitions
  */
 
 
-void SPI1_Initialize(void) {
+void SPI1Initialize(void) {
 
     IEC0bits.SPI1EIE = 0;
     IEC0bits.SPI1IE = 0;
@@ -105,6 +105,8 @@ void SPI1_Initialize(void) {
     IFS0bits.SPI1EIF = 0;
     IEC0bits.SPI1EIE = 1;
     IEC0bits.SPI1IE = 1;
+    
+    SPI1_SetIntHandler(SPI1_DefInterruptHandler);
 
 }
 
@@ -240,21 +242,7 @@ SPI1_STATUS SPI1_StatusGet() {
 }
 
 void __attribute__((__interrupt__, no_auto_psv)) _SPI1Interrupt(void) {
-    nSS = 1;
-    Nop();
-    Nop();
-    nLDAC = 0;
-    Nop();
-    Nop();
-    Nop();
-    nLDAC = 1;
-    if (--SPITxCnt) {
-        Nop();
-        Nop();
-        Nop();
-        nSS = 0;
-        SPI1BUF = DAC_B.Int;
-    }
+    SPI1CallBack();
     IFS0bits.SPI1IF = 0;
 }
 
@@ -288,6 +276,16 @@ void __attribute__((__interrupt__, no_auto_psv)) _DMA3Interrupt(void) {
 
 void __attribute__((__interrupt__, no_auto_psv)) _DMA4Interrupt(void) {
     IFS2bits.DMA4IF = 0; // Clear the DMA4 Interrupt Flag
+}
+
+void SPI1_SetIntHandler(void *handler) {
+    SPI1_InterruptHandler = handler;
+}
+
+static void SPI1CallBack(void) {
+    if (SPI1_InterruptHandler) {
+        SPI1_InterruptHandler();
+    }
 }
 /**
  End of File

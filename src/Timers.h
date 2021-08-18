@@ -14,7 +14,7 @@ extern "C" {
 
 #endif
 
-    void Timer1_Initialize(void);
+    void Timer1Initialize(void);
     void Timer3_Initialize(void);
 
 

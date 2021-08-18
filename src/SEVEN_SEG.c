@@ -1,5 +1,6 @@
 #include <xc.h>
 #include "Common.h"
+#include "SEVEN_SEG.h"
 
 #define     SEGMENT_1A   LATAbits.LATA7 
 #define     SEGMENT_1B   LATGbits.LATG9
@@ -54,8 +55,8 @@
 #define     DIR_SEGMENT_2DOT    TRISCbits.TRISC14
 
 
-uint8_t FirstLineData[6];
-uint8_t SecondLineData[6];
+uint8_t SegFirstLineData[6];
+uint8_t SegSecondLineData[6];
 uint16_t ScanDigit = 1;
 const uint8_t SevenSegPattern[16] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x40, 0x40, 0x00, 0x00, 0x00, 0x00};
 
@@ -76,7 +77,7 @@ union SEGMENT_Template {
     uint8_t Byte_Val;
 } SEGMENT_Data;
 
-void LINE_12_Initialize(void) {
+void LINE12Initialize(void) {
     DIR_SEGMENT_1A = 0;
     DIR_SEGMENT_1B = 0;
     DIR_SEGMENT_1C = 0;
@@ -114,7 +115,7 @@ void Scan7Segment(void) {
     COMMON_5 = 0;
     COMMON_6 = 0;
 
-    SEGMENT_Data.Byte_Val = FirstLineData[Scan_Index];
+    SEGMENT_Data.Byte_Val = SegFirstLineData[Scan_Index];
     if (SEGMENT_Data.SEG_A) SEGMENT_1A = 1;
     else SEGMENT_1A = 0;
     if (SEGMENT_Data.SEG_B) SEGMENT_1B = 1;
@@ -139,7 +140,7 @@ void Scan7Segment(void) {
     //  Write scan data for 2nd line
     //  *******************************
 
-    SEGMENT_Data.Byte_Val = SecondLineData[Scan_Index];
+    SEGMENT_Data.Byte_Val = SegSecondLineData[Scan_Index];
     if (SEGMENT_Data.SEG_A) SEGMENT_2A = 1;
     else SEGMENT_2A = 0;
     if (SEGMENT_Data.SEG_B) SEGMENT_2B = 1;
@@ -183,17 +184,17 @@ void Scan7Segment(void) {
 }
 
 void LINE_12_Write_Default(void) {
-    FirstLineData[0] = SevenSegPattern[10];
-    FirstLineData[1] = SevenSegPattern[10];
-    FirstLineData[2] = SevenSegPattern[10];
-    FirstLineData[3] = SevenSegPattern[10];
-    FirstLineData[4] = SevenSegPattern[10];
-    FirstLineData[5] = SevenSegPattern[10];
+    SegFirstLineData[0] = SevenSegPattern[10];
+    SegFirstLineData[1] = SevenSegPattern[10];
+    SegFirstLineData[2] = SevenSegPattern[10];
+    SegFirstLineData[3] = SevenSegPattern[10];
+    SegFirstLineData[4] = SevenSegPattern[10];
+    SegFirstLineData[5] = SevenSegPattern[10];
 
-    SecondLineData[0] = SevenSegPattern[10];
-    SecondLineData[1] = SevenSegPattern[10];
-    SecondLineData[2] = SevenSegPattern[10];
-    SecondLineData[3] = SevenSegPattern[10];
-    SecondLineData[4] = SevenSegPattern[10];
-    SecondLineData[5] = SevenSegPattern[10];
+    SegSecondLineData[0] = SevenSegPattern[10];
+    SegSecondLineData[1] = SevenSegPattern[10];
+    SegSecondLineData[2] = SevenSegPattern[10];
+    SegSecondLineData[3] = SevenSegPattern[10];
+    SegSecondLineData[4] = SevenSegPattern[10];
+    SegSecondLineData[5] = SevenSegPattern[10];
 }

@@ -1,10 +1,3 @@
-/* 
- * File:   Common.h
- * Author: user
- *
- * Created on 2020年4月29日, 下午 4:53
- */
-
 #ifndef COMMON_H
 #define	COMMON_H
 
@@ -18,22 +11,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "LCM.h"
-#include "SEVEN_SEG.h"
-#include "Timers.h"
-#include "adc1.h"
-#include "UART1.h"
-#include "i2c1.h"
-#include "i2c2.h"
-#include "spi1.h"
-#include "MP_Car_leds.h"
-#include "ecan1_config.h"
-#include "ecan1drv.h"
-#include "pwm.h"
-#include "time.h"
-#include "MCP79410.h"
-#include "MCP4551.h"
-#include "MCP4922.h"
+#include "InterruptHandle.h"
 #include "usb/usb.h"
 
     /* check if build is for a real debug tool */
@@ -41,14 +19,24 @@ extern "C" {
 #define USING_SIMULATOR
 #endif
 
-    /*UART1*/
+    /* Config */
+#define configUSE_BUZZER 0
+#define configUSE_USBSERIAL 1
+
+    /* USB */
+#define USB_MSG_BUF_LENGTH 64
+
+    /* UART1 */
 #define U1TX_MSG_BUF_LENGTH 24
-#define U1BAUDRATE 9600
-#define U1BRP_VAL ((FCY/U1BAUDRATE)/4)-1
-    /* CAN1 Baud Rate Configuration */
+#define U1_BAUDRATE 9600
+#define U1_BRP_VAL ((FCY/U1_BAUDRATE)/4)-1
+
+    /* CAN1 */
 #define CAN1_BITRATE 500000
-#define NTQ     20  // 20 Time Quanta in a Bit Time
-#define CAN1_BRP_VAL ( (FCY / (2 * NTQ * CAN1_BITRATE)) - 1 )
+#define CAN1_NTQ     20  // 20 Time Quanta in a Bit Time
+#define CAN1_BRP_VAL ( (FCY / (2 * CAN1_NTQ * CAN1_BITRATE)) - 1 )
+
+    /* I2C */
 #define I2C1_FSCL 400000
 #define I2C2_FSCL 100000
 #define I2C1_BRG_VAL (FCY/I2C1_FSCL-130*FCY/1000000000L)-1
@@ -58,45 +46,40 @@ extern "C" {
     //#define adc2volt_3_3V(ADC_Value)    (ADC_Value*825L+512)/1024
 
     /*Vref+ = Vdd = 3.3V : 1023*/
-#define adc2volt_3_3V(adcvalue)    adcvalue*4-(adcvalue*3171L+2048)/4096  
+#define mADCToVoltage_3300mV(adcvalue)    adcvalue*4-(adcvalue*3171L+2048)/4096  
 
-    /*LED*/
+    /* LED */
 #define LED1 LATAbits.LATA5
 #define LED2 LATAbits.LATA4
 #define LED3 LATAbits.LATA3
 #define LED4 LATAbits.LATA2
 
-#define DIR_LED1 TRISAbits.TRISA5
-#define DIR_LED2 TRISAbits.TRISA4
-#define DIR_LED3 TRISAbits.TRISA3
-#define DIR_LED4 TRISAbits.TRISA2
+    /* BT */
+#define BT2 !PORTDbits.RD8
+#define BT3 !PORTAbits.RA15
+#define BT4 !PORTDbits.RD0
+#define BT5 !PORTDbits.RD11
 
-    /*BT*/
-#define BT2 !PORTDbits.RD8 /*BT2*/
-#define BT3 !PORTAbits.RA15 /*BT3*/
-#define BT4 !PORTDbits.RD0 /*BT4*/
-#define BT5 !PORTDbits.RD11 /*BT5*/
+    /* SW-DIP */
+#define DSW1 !PORTAbits.RA9
+#define DSW2 !PORTBbits.RB8
+#define DSW3 !PORTBbits.RB9
+#define DSW4 !PORTBbits.RB10
+#define DSW5 !PORTBbits.RB11
+#define DSW6 !PORTAbits.RA1
 
-    /*SW-DIP*/
-#define DSW1 !PORTAbits.RA9 /*DSW1*/
-#define DSW2 !PORTBbits.RB8 /*DSW2*/
-#define DSW3 !PORTBbits.RB9 /*DSW3*/
-#define DSW4 !PORTBbits.RB10 /*DSW4*/
-#define DSW5 !PORTBbits.RB11 /*DSW5*/
-#define DSW6 !PORTAbits.RA1 /*DSW6*/
-
-    /*Buzzer*/
+    /* Buzzer */
 #define Buzzer LATGbits.LATG13
 
-    /*MCP4922*/
+    /* SPI1 : MCP4922 */
 #define nLDAC LATDbits.LATD14
 #define nSS LATDbits.LATD15
 
     /* Display ON/OFF Control defines */
-#define LCD_DON                     0b00001111  /* Display on      */
-#define LCD_DOFF                    0b00001011  /* Display off     */
-#define LCD_CURSOR_ON               0b00001111  /* Cursor on       */
-#define LCD_CURSOR_OFF              0b00001101  /* Cursor off      */
+#define LCD_DISP_ON                 0b00001111  /* Display on      */
+#define LCD_DISP_OFF                0b00001011  /* Display off     */
+#define LCD_CUR_ON                  0b00001111  /* Cursor on       */
+#define LCD_CUR_OFF                 0b00001101  /* Cursor off      */
 #define LCD_BLINK_ON                0b00001111  /* Cursor Blink    */
 #define LCD_BLINK_OFF               0b00001110  /* Cursor No Blink */
 #define LCD_BLINK_OFF_CURSOR_OFF    0b00001100  /* Cursor No Blink, Cursor off */
@@ -118,6 +101,7 @@ extern "C" {
     /*I2C Address*/
 #define I2C_MAX_TRY 500
 #define SLAVE_I2C_RPB1600_ADDRESS 0x47
+#define SLAVE_I2C_PIC16F1939_ADDRESS 0x4F
 #define SLAVE_I2C_LCD_ADDRESS 0x27
 #define SLAVE_I2C1_MCP79410_REG_ADDRESS 0x6F /*MCP79410 ‘1101 111’b </RTCC Register/SRAM Control Byte>*/  
 #define SLAVE_I2C1_MCP79410_EEPROM_ADDRESS 0x57 /*MCP79410 ‘1010 111’b </EEPROM Control Byte>*/
@@ -128,10 +112,9 @@ extern "C" {
 
     /*I2C2*/
 #define SLAVE_I2C2_DEVICE_TIMEOUT 1500
-    /*Single Nonvolatile 8-bit Potentiometer*/
 
     /*ECAN1*/
-#define CANTX_ID_20MS 0x400
+#define CANTX_ID_10MS 0x400
 #define CANTX_ID_100MS 0x405
 #define CANTX_ID_500MS 0x200
 #define CANTX_ID_TRIGGER 0x18ABCDEF
@@ -152,7 +135,7 @@ extern "C" {
                 unsigned _BT4 : 1;
                 unsigned _BT5 : 1;
             } TACT;
-            uint8_t bTACT;
+            uint8_t byteTACT;
         };
 
         union {
@@ -165,13 +148,15 @@ extern "C" {
                 unsigned _DSW5 : 1;
                 unsigned _DSW6 : 1;
             } DIP;
-            uint8_t bDIP;
+            uint8_t byteDIP;
         };
-    } SwitchItem_t;
+    } xSwitchItem_t;
 
     typedef struct xTimeFlag {
         unsigned Second : 1;
-    } TimeFlag_t;
+        unsigned Minutes : 1;
+        unsigned Hour : 1;
+    } xTimeFlag_t;
 
     typedef struct xBuzzerMode {
         unsigned _0 : 1; //on 50ms off 50ms 5shot
@@ -180,7 +165,7 @@ extern "C" {
         unsigned _3 : 1;
         unsigned _4 : 1;
         unsigned : 3;
-    } BuzzerMode_t;
+    } xBuzzerMode_t;
 
     typedef struct xRealTimeClock {
         uint8_t Year;
@@ -190,27 +175,15 @@ extern "C" {
         uint8_t Hour;
         uint8_t Minute;
         uint8_t Second;
-    } RealTimeClock_t;
+    } xRealTimeClock_t;
 
     typedef struct xCANDataFrame { /*The argument to the aligned attribute must be a power of two.*/
 
-        union {
-
-            struct {
-                uint16_t SID;
-                uint32_t EID;
-                uint8_t DLC;
-                uint8_t IDE_BIT;
-                uint8_t DATA_IN;
-            };
-
-            struct {
-                uint16_t Null1;
-                uint32_t Null2;
-                uint8_t Null3;
-                uint8_t Null4;
-                uint8_t Null5;
-            };
+        struct {
+            uint16_t SID;
+            uint32_t EID;
+            uint8_t DLC;
+            uint8_t IDE_BIT;
         };
 
         union {
@@ -234,12 +207,12 @@ extern "C" {
                 uint8_t byteData7;
             };
         };
-    } CANDataFrame_t;
+    } xECANMessageBuffers_t;
 
     typedef struct xI2CLCDFlag {
         unsigned Enale : 1;
         unsigned n8bit_4bit : 1;
-    } I2CLCDFlag_t;
+    } xI2CLCDFlag_t;
 
     typedef union xI2CLCDIO {
 
@@ -259,7 +232,7 @@ extern "C" {
             unsigned D7_D4 : 4;
         };
         uint8_t byteData;
-    } I2CLCDIO_t;
+    } xI2CLCDIO_t;
 
     typedef union xI2CLCDAddress {
 
@@ -268,7 +241,7 @@ extern "C" {
             unsigned Address : 7;
         };
         uint8_t byteData;
-    } I2CLCDAddress_t;
+    } xI2CLCDAddress_t;
 
     typedef union xI2CDevice {
 
@@ -277,15 +250,15 @@ extern "C" {
             unsigned RPB1600 : 1;
             unsigned MCP4551 : 1;
             unsigned MCP79410 : 1;
-            unsigned Check : 1;
+            unsigned PIC16F1939 : 1;
         };
         uint8_t ALL;
-    } I2CDevice_t;
+    } xI2CDevice_t;
 
     typedef enum {
         I2C1 = 1,
         I2C2 = 2
-    } I2CModules_t;
+    } xI2CModules_t;
 
     /*Debounce*/
     typedef enum {
@@ -299,18 +272,18 @@ extern "C" {
         dsw4,
         dsw5,
         dsw6,
-    } DebounceSwitch_t;
+    } eDebounceSwitch_t;
 
-#define mData(DataFrame,buf)   \
+#define mECAN_DMA2MsgBufWord(ECANMessageBufferWord,buf)   \
 {                                   \
-    DataFrame.SID = (ecan1msgBuf[buf][0] & 0x1ffc) >> 2;\
-    DataFrame.EID = ((uint32_t) (ecan1msgBuf[buf][1] & 0x0fff) << 6) + ((ecan1msgBuf[buf][2]& 0xfc00) >> 10);\
-    DataFrame.IDE_BIT = ecan1msgBuf[buf][0] & 0x0001;\
-    DataFrame.DLC = ecan1msgBuf[buf][2] & 0x000f;\
-    DataFrame.wordData0 = ecan1msgBuf[buf][3];\
-    DataFrame.wordData1 = ecan1msgBuf[buf][4];\
-    DataFrame.wordData2 = ecan1msgBuf[buf][5];\
-    DataFrame.wordData3 = ecan1msgBuf[buf][6];\
+    ECANMessageBufferWord.SID = (ecan1msgBuf[buf][0] & 0x1ffc) >> 2;\
+    ECANMessageBufferWord.EID = ((uint32_t) (ecan1msgBuf[buf][1] & 0x0fff) << 6) + ((ecan1msgBuf[buf][2]& 0xfc00) >> 10);\
+    ECANMessageBufferWord.IDE_BIT = ecan1msgBuf[buf][0] & 0x0001;\
+    ECANMessageBufferWord.DLC = ecan1msgBuf[buf][2] & 0x000f;\
+    ECANMessageBufferWord.wordData0 = ecan1msgBuf[buf][3];\
+    ECANMessageBufferWord.wordData1 = ecan1msgBuf[buf][4];\
+    ECANMessageBufferWord.wordData2 = ecan1msgBuf[buf][5];\
+    ECANMessageBufferWord.wordData3 = ecan1msgBuf[buf][6];\
 }
 
     void DMA0_Initialize(void); //UART1 transmitter
@@ -326,5 +299,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* COMMON_H */
+#endif
 

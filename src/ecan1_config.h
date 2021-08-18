@@ -53,7 +53,7 @@ extern "C" {
     // *****************************************************************************
     // *****************************************************************************
     /* Function Prototype     */
-    void ECAN1_Initialize(void);
+    void ECAN1Initialize(void);
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 }

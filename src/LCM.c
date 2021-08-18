@@ -1,12 +1,12 @@
 /*
- * File:   LCD1602.c
+ * File:   LCM.c
  * Author: user
  *
- * Created on 2020年4月30日, 下午 12:34
+ * Created on April 30, 2020, 12:34 PM
  */
 
-
 #include "Common.h"
+#include "LCM.h"
 
 #define LCM_RS LATGbits.LATG15
 #define LCM_RW LATEbits.LATE6
@@ -129,7 +129,7 @@ void IntLCM_WriteInstruction(uint8_t Instruction) {
     IntLCM_Communication(Instruction & 0x0f);
 }
 
-void LCM_Initialize(void) {
+void LCMInitialize(void) {
     LCM_IOSetup();
 
     LCM_RS = 0; // RS = 0 , Instruction

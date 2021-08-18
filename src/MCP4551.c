@@ -2,14 +2,16 @@
  * File:   MCP4551.c
  * Author: user
  *
- * Created on 2021年4月23日, 下午 4:47
+ * Created on April 23, 2021, 4:47 PM
  */
 
-
 #include "Common.h"
+#include "MCP4551.h"
+#include "i2c2.h"
+
+extern I2C2_MESSAGE_STATUS I2C2MessageStatus;
 
 uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits OperationBits, uint16_t Data) {
-    I2C2_MESSAGE_STATUS I2C2MessageStatus;
     mcp4551cmd_t Command = {
         .Data8 = (Data >> 8) & 0x01,
         .OperationBits = OperationBits,

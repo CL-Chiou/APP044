@@ -173,7 +173,7 @@ void Ecan1ClkInit(void) {
  *                buffers, and the acceptance filters and
  *                setting appropriate masks for the same.
  *****************************************************************************/
-void ECAN1_Initialize(void) {
+void ECAN1Initialize(void) {
     /* Request Configuration Mode */
     C1CTRL1bits.REQOP = 4;
     while (C1CTRL1bits.OPMODE != 4);
@@ -206,9 +206,9 @@ void ECAN1_Initialize(void) {
     
      */
 
-    Ecan1WriteRxAcptFilter(5, CANRX_ID_1, 1, 04, 0); // Filter 5
-    Ecan1WriteRxAcptFilter(6, CANTX_ID_TRIGGER, 1, 06, 1); // Filter 6
-    Ecan1WriteRxAcptFilter(9, CANRX_ID_2, 1, 07, 2); // Filter 9
+    Ecan1WriteRxAcptFilter(5, CANRX_ID_1, 1, 4, 0); // Filter 5
+    Ecan1WriteRxAcptFilter(6, CANTX_ID_TRIGGER, 1, 6, 1); // Filter 6
+    Ecan1WriteRxAcptFilter(9, CANRX_ID_2, 1, 7, 2); // Filter 9
     /*    Mask Configuration
     Ecan1WriteRxAcptMask(int m, long identifierMask, uint16_t mide, uint16_t exide)
     m = 0 to 2 -> Mask Number
@@ -250,7 +250,7 @@ void ECAN1_Initialize(void) {
 }
 
 void __attribute__((interrupt, no_auto_psv)) _DMA5Interrupt(void) {
-    IFS3bits.DMA5IF = 0; // Clear the DMA0 Interrupt Flag;
+    IFS3bits.DMA5IF = 0; // Clear the DMA5 Interrupt Flag;
 }
 
 /*******************************************************************************

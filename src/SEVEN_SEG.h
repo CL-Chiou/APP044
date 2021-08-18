@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-    void LINE_12_Initialize(void);
+    void LINE12Initialize(void);
     void Scan7Segment(void);
     void LINE_12_Write_Default(void);
 

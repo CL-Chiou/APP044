@@ -2,60 +2,34 @@
  * File:   adc.c
  * Author: user
  *
- * Created on 2020年5月5日, 上午 9:40
+ * Created on May 5, 2020, 9:40 AM
  */
-
 
 #include <xc.h>
 #include "Common.h"
-
-enum{
-    AN3,
-    AN0,
-    AN1,
-    AN2
-};
+#include "Timers.h"
+#include "adc1.h"
 
 __eds__ uint16_t ADC1BUF[8] __attribute__((eds, space(dma)));
-uint16_t ChannelVolt_mV[8];
+uint16_t ADC1CH0123_mV[4];
 uint16_t VR1_8bit;
-extern uint16_t U1Tx_PotVolt_mV[U1TX_MSG_BUF_LENGTH];
-extern uint8_t *pU1TxAddress;
-extern uint8_t U1Tx_SimMsg[U1TX_MSG_BUF_LENGTH];
+
+void (*ADC1_AD1InterruptHandler)(void);
+void (*ADC1_DMA2InterruptHandler)(void);
+static void AD1CallBack(void);
+static void DMA2CallBack(void);
 
 void __attribute__((__interrupt__, no_auto_psv)) _DMA2Interrupt(void) {
-    ChannelVolt_mV[3] = adc2volt_3_3V(ADC1BUF[AN3]); // Read the AN3:ANIN2 conversion result
-    ChannelVolt_mV[0] = adc2volt_3_3V(ADC1BUF[AN0]); // Read the AN0:VR1_8bit conversion result
-    ChannelVolt_mV[1] = adc2volt_3_3V(ADC1BUF[AN1]); // Read the AN1:ANIN4 conversion result
-    ChannelVolt_mV[2] = adc2volt_3_3V(ADC1BUF[AN2]); // Read the AN2:ANIN3 conversion result
-//    DMA0CONbits.CHEN = 1; // Enable DMA0 channel
-//    DMA0REQbits.FORCE = 1; // Manual mode:Kick-start the 1st transfer
-    VR1_8bit = ADC1BUF[AN0] >> 2;
-    MDC = ChannelVolt_mV[0];
-    IFS1bits.DMA2IF = 0; // Clear the DMA2 Interrupt Flag
+    DMA2CallBack();
+    IFS1bits.DMA2IF = 0;
 }
 
 void __attribute__((__interrupt__, no_auto_psv)) _AD1Interrupt(void) {
-    ChannelVolt_mV[0] = adc2volt_3_3V(ADC1BUF0); // Read the VR1_8bit conversion result
-    ChannelVolt_mV[1] = adc2volt_3_3V(ADC1BUF1); // Read the ANIN4 conversion result
-    ChannelVolt_mV[2] = adc2volt_3_3V(ADC1BUF2); // Read the ANIN3 conversion result
-    ChannelVolt_mV[3] = adc2volt_3_3V(ADC1BUF3); // Read the ANIN2 conversion result
-    ChannelVolt_mV[4] = adc2volt_3_3V(ADC1BUF4); // Read the ANIN1 conversion result
-    U1Tx_PotVolt_mV[0] = (ChannelVolt_mV[0] / 1000) + '0';
-    U1Tx_PotVolt_mV[1] = (ChannelVolt_mV[0] / 100 % 10) + '0';
-    U1Tx_PotVolt_mV[2] = (ChannelVolt_mV[0] / 10 % 10) + '0';
-    U1Tx_PotVolt_mV[3] = (ChannelVolt_mV[0] % 10) + '0';
-#ifdef USING_SIMULATOR
-    pU1TxAddress = U1Tx_SimMsg;
-    IFS0bits.U1TXIF = 1;
-#else
-    DMA0CONbits.CHEN = 1; // Enable DMA0 channel
-    DMA0REQbits.FORCE = 1; // Manual mode:Kick-start the 1st transfer
-#endif
+    AD1CallBack();
     IFS0bits.AD1IF = 0;
 }
 
-void ADC1_Initialize(void) { /*TAD >= 117.6nS*/
+void ADC1Initialize(void) { /*TAD >= 117.6nS*/
     /* Set port configuration */
     ANSELBbits.ANSB0 = 1; // Ensure AN0/RB0 is analog; VR1_8bit
     ANSELBbits.ANSB1 = 1; // Ensure AN1/RB1 is analog; ANIN4
@@ -101,6 +75,7 @@ void ADC1_Initialize(void) { /*TAD >= 117.6nS*/
     AD1CSSL = 0x0000;
 #ifdef USING_SIMULATOR
     IEC0bits.AD1IE = 1;
+    ADC1_AD1SetIntHandler(ADC1_AD1DefInterruptHandler);
 #endif
     IPC3bits.AD1IP = 1;
     AD1CON1bits.ADON = 1;
@@ -122,4 +97,25 @@ void DMA2_Initialize(void) {
     IFS1bits.DMA2IF = 0; // Clear DMA Interrupt Flag
     IEC1bits.DMA2IE = 1; // Enable DMA interrupt
     DMA2CONbits.CHEN = 1; //Enable DMA channel
+    ADC1_DMA2SetIntHandler(ADC1_DMA2DefInterruptHandler);
+}
+
+void ADC1_AD1SetIntHandler(void *handler) {
+    ADC1_AD1InterruptHandler = handler;
+}
+
+void ADC1_DMA2SetIntHandler(void *handler) {
+    ADC1_DMA2InterruptHandler = handler;
+}
+
+static void AD1CallBack(void) {
+    if (ADC1_AD1InterruptHandler) {
+        ADC1_AD1InterruptHandler();
+    }
+}
+
+static void DMA2CallBack(void) {
+    if (ADC1_DMA2InterruptHandler) {
+        ADC1_DMA2InterruptHandler();
+    }
 }

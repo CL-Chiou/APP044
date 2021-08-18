@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-void UART1_Initialize(void);
+void UART1Initialize(void);
 
 #ifdef	__cplusplus
 }
