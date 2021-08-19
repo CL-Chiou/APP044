@@ -22,15 +22,15 @@ void MCP79410_Initialize(void) {
 }
 
 void MCP79410_EnableOscillator(void) {
-    uint16_t ST_bit = MCP79410_Command(RTCWKDAY, 0x00, Read); //Read day + OSCON bit
-    ST_bit = ST_bit | START_32KHZ;
-    MCP79410_Command(RTCSEC, ST_bit, Write); //START bit is located in the Sec register
+    uint8_t OSCRUN_bit = MCP79410_Command(RTCWKDAY, 0x00, Read); //Read day + OSCON bit
+    OSCRUN_bit = OSCRUN_bit | OSCRUN;
+    MCP79410_Command(RTCWKDAY, OSCRUN_bit, Write);
 }
 
 void MCP79410_DisableOscillator(void) {
-    uint16_t ST_bit = MCP79410_Command(RTCWKDAY, 0x00, Read); //Read day + OSCON bit
-    ST_bit = ST_bit & ~START_32KHZ;
-    MCP79410_Command(RTCSEC, ST_bit, Write); //START bit is located in the Sec regist
+    uint8_t OSCRUN_bit = MCP79410_Command(RTCWKDAY, 0x00, Read); //Read day + OSCON bit
+    OSCRUN_bit = OSCRUN_bit & ~OSCRUN;
+    MCP79410_Command(RTCWKDAY, OSCRUN_bit, Write);
 }
 
 uint8_t MCP79410_IsRunning(void) {
@@ -128,7 +128,7 @@ void MCP79410_SetHourFormat(Format_t format) {
     } else {
         Format_bit |= HOUR_FORMAT; //Set format to H12
     }
-    MCP79410_Command(RTCHOUR, Format_bit, Write); //START bit is located in the Sec register
+    MCP79410_Command(RTCHOUR, Format_bit, Write);
     MCP79410_EnableOscillator(); //Enable clock
 }
 

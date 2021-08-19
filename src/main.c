@@ -496,7 +496,6 @@ void MultiTask(void) {
             MultiTaskCnt_10ms = 0;
             //ID = 0x400
             if (C1TR01CONbits.TXREQ0 == 0) {
-
                 Ecan1WriteTxMsgBufId(0, CANTX_ID_10MS, 1, 0);
                 Ecan1WriteTxMsgBufData(0, 1,
                         (uint16_t) SystemClock.Second,
