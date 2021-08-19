@@ -127,8 +127,8 @@ int main(void) {
     LCD_SetCursor(0, 0);
     LCD_PutROMString((const uint8_t*) "Hello, World");*/
 
-    I2CDevice.MCP79410 = CheckI2CDevice(SLAVE_I2C1_MCP79410_REG_ADDRESS, I2C1);
-    I2CDevice.MCP4551 = CheckI2CDevice(SLAVE_I2C2_MCP4551_ADDRESS, I2C2);
+    I2CDevice.ALL = 0xFF;
+    I2CDevice.MCP79410 = I2CDevice.MCP4551 = I2CDevice.PIC16F1939 = 0;
     /* Disable Watch Dog Timer */
     RCONbits.SWDTEN = 1; //4ms
     if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
@@ -364,6 +364,45 @@ void MultiTask(void) {
             Nop();
             break;
         case 2:
+            if (I2CDevice.ALL != 0xFF) {
+                static uint8_t WhichDevice = 0;
+                switch (WhichDevice) {
+                    default:
+                        WhichDevice = 0;
+                    case 0:
+                        WhichDevice++;
+                        if (I2CDevice.LCD == 0) {
+                            I2CDevice.LCD = CheckI2CDevice(SLAVE_I2C_LCD_ADDRESS, I2C2);
+                            break;
+                        }
+                    case 1:
+                        WhichDevice++;
+                        if (I2CDevice.RPB1600 == 0) {
+                            I2CDevice.RPB1600 = CheckI2CDevice(SLAVE_I2C_RPB1600_ADDRESS, I2C2);
+                            break;
+                        }
+                    case 2:
+                        WhichDevice++;
+                        if (I2CDevice.MCP4551 == 0) {
+                            I2CDevice.MCP4551 = CheckI2CDevice(SLAVE_I2C2_MCP4551_ADDRESS, I2C2);
+                            break;
+                        }
+                    case 3:
+                        WhichDevice++;
+                        if (I2CDevice.MCP79410 == 0) {
+                            I2CDevice.MCP79410 = CheckI2CDevice(SLAVE_I2C1_MCP79410_REG_ADDRESS, I2C1);
+                            break;
+                        }
+
+                    case 4:
+                        WhichDevice++;
+                        if (I2CDevice.PIC16F1939 == 0) {
+                            I2CDevice.PIC16F1939 = CheckI2CDevice(SLAVE_I2C_PIC16F1939_ADDRESS, I2C2);
+                            break;
+                        }
+                }
+                if (((I2CDevice.ALL ^ 0xFF) >> WhichDevice) == 0) WhichDevice = 0;
+            }
             Nop();
             break;
         case 3:
@@ -412,9 +451,11 @@ void MultiTask(void) {
             Nop();
             break;
         case 10:
-            if (++Count >= 5) { //100ms
-                Count = 0;
-                I2C_Slave_PIC16F1939();
+            if (I2CDevice.PIC16F1939 == 1) {
+                if (++Count >= 5) { //100ms
+                    Count = 0;
+                    I2C_Slave_PIC16F1939();
+                }
             }
             Nop();
             break;
@@ -481,8 +522,6 @@ void MultiTask(void) {
                 I2CRetryCnt++;
             }
             PreviousRTCSecond = RTCSecond;
-        } else if (I2CDevice.MCP79410 == 0) {
-            rtccReadFailed = 1;
         }
         if (rtccSecondChanged == 1 && rtccSecondChanged1shot == 0) {
             MCP79410_GetTime();
