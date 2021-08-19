@@ -374,6 +374,7 @@ void MultiTask(void) {
             break;
         case 5:
             if (flagRTCCSetTime == 1 && flagRTCCSetTime1shot == 0 && I2CDevice.MCP79410 == 1) {
+                RCONbits.SWDTEN = 0;
                 MCP79410_Initialize();
                 BzMode._1 = 1;
                 MCP79410_DisableOscillator();
@@ -381,6 +382,7 @@ void MultiTask(void) {
                 MCP79410_EnableOscillator(); //Start clock by enabling oscillator
                 MCP79410_GetTime();
                 flagRTCCSetTime1shot = 1;
+                RCONbits.SWDTEN = 1;
             }
             Nop();
             break;
@@ -463,8 +465,7 @@ void MultiTask(void) {
         static uint8_t rtccSecondChanged1shot = 0;
 #ifndef USING_SIMULATOR
         if (I2CDevice.MCP79410 == 1 && rtccSecondChanged == 0 && rtccReadFailed == 0) {
-            uint8_t I2CRetryCnt = 0;
-            static uint8_t _1shot = 0;
+            static uint8_t _1shot = 0, I2CRetryCnt = 0;
             if (_1shot == 0) {
                 _1shot = 1;
                 RTCSecond = MCP79410_Command(RTCSEC, 0x00, Read);
