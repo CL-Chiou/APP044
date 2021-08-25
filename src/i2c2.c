@@ -521,12 +521,11 @@ static void I2C2_FunctionComplete(void) {
 }
 
 static void I2C2_Stop(I2C2_MESSAGE_STATUS completion_code) {
-    extern xI2CLCDAddress_t I2CAddress;
     extern xI2CDevice_t I2CDevice;
     // then send a stop
     I2C2_STOP_CONDITION_ENABLE_BIT = 1;
     if (completion_code != I2C2_MESSAGE_COMPLETE) {
-        switch (I2CAddress.Address) {
+        switch ((p_i2c2_trb_current->address) >> 1) {
             case SLAVE_I2C_LCD_ADDRESS:
                 I2CDevice.LCD = 0;
                 break;

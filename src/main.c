@@ -958,26 +958,27 @@ void LCD_SetCursor(uint8_t CurY, uint8_t CurX) {
 }
 
 void I2C_Slave_PIC16F1939(void) {
-    I2C2_MESSAGE_STATUS I2C2MessageStatus;
     uint8_t bLED[2] = {0x87, 0x00};
     uint16_t i2c_PendingTimeout;
-    static uint8_t RollingCount = 0;
+    static uint8_t RollingCount = 1;
     static bool nRising_Falling = 0;
-    if (nRising_Falling == 1) {
-        bLED[1] = --RollingCount;
-    } else {
-        bLED[1] = ++RollingCount;
-    }
-    if (RollingCount <= 0 || RollingCount >= 255) {
-        nRising_Falling ^= 1;
-    }
+    bLED[1] = RollingCount;
     I2C2_MasterWrite(bLED, 2, SLAVE_I2C_PIC16F1939_ADDRESS, &I2C2MessageStatus);
-    i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
     while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
         if (i2c_PendingTimeout == SLAVE_I2C2_DEVICE_TIMEOUT) {
             break;
         } else i2c_PendingTimeout++;
+    }
+    if (I2CDevice.PIC16F1939 == 1) {
+        if (nRising_Falling == 1) {
+            RollingCount >>= 1;
+        } else {
+            RollingCount <<= 1;
+        }
+        if (RollingCount & 0x01 || RollingCount & 0x80) {
+            nRising_Falling ^= 1;
+        }
     }
 #endif
 }
