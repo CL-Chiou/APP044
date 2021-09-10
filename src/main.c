@@ -129,7 +129,7 @@ int main(void) {
 
     I2CDevice.ALL = 0xFF;
     I2CDevice.MCP79410 = I2CDevice.MCP4551 = I2CDevice.PIC16F1939 = 0;
-    /* Disable Watch Dog Timer */
+    /* Enable Watch Dog Timer */
     RCONbits.SWDTEN = 1; //4ms
     if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
         BzMode._0 = 1;
@@ -842,36 +842,24 @@ void LCD_Initialize(void) {
 
         I2CStatus.n8bit_4bit = 1;
         LCD_WriteInstruction(0x3);
-#ifndef USING_SIMULATOR
-        __delay_us(3000); /*wait time > 4.5ms*/
-#endif
+        Delay_us(3000); /*wait time > 4.5ms*/
 
         LCD_WriteInstruction(0x3);
-#ifndef USING_SIMULATOR
-        __delay_us(1500); /*wait time > 1.5ms*/
-#endif
+        Delay_us(1500); /*wait time > 1.5ms*/
 
         LCD_WriteInstruction(0x3);
-#ifndef USING_SIMULATOR
-        __delay_us(100); /*wait time > 100us*/
-#endif
+        Delay_us(100); /*wait time > 100us*/
 
         LCD_WriteInstruction(0x2);
-#ifndef USING_SIMULATOR
-        __delay_us(100); /*wait time > 100us*/
-#endif
+        Delay_us(100); /*wait time > 100us*/
 
         I2CStatus.n8bit_4bit = 0;
     }
     LCD_WriteInstruction(LCD_FOUR_BIT);
-#ifndef USING_SIMULATOR
-    __delay_us(100); /*wait time > 100us*/
-#endif
+    Delay_us(100); /*wait time > 100us*/
 
-    LCD_WriteInstruction(LCD_CUR_ON);
-#ifndef USING_SIMULATOR
-    __delay_us(1800); /*wait time > 1.6ms*/
-#endif
+    LCD_WriteInstruction(LCD_BLINK_OFF_CURSOR_OFF);
+    Delay_us(1800); /*wait time > 1.6ms*/
 
 }
 
@@ -901,7 +889,7 @@ void LCD_WriteInstruction(uint8_t Instruction) {
     i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
     while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
-        if (i2c_PendingTimeout == 1500) {
+        if (i2c_PendingTimeout == SLAVE_I2C2_DEVICE_TIMEOUT) {
             break;
         } else i2c_PendingTimeout++;
     }
@@ -932,7 +920,7 @@ void LCD_WriteData(uint8_t DATA) {
     i2c_PendingTimeout = 0;
 #ifndef USING_SIMULATOR
     while (I2C2MessageStatus == I2C2_MESSAGE_PENDING) {
-        if (i2c_PendingTimeout == 1500) {
+        if (i2c_PendingTimeout == SLAVE_I2C2_DEVICE_TIMEOUT) {
             break;
         } else i2c_PendingTimeout++;
     }
@@ -943,18 +931,14 @@ void LCD_PutROMString(const uint8_t *String) {
     while (*String != 0x00) {
 
         LCD_WriteData(*String++);
-#ifndef USING_SIMULATOR
-        __delay_us(50);
-#endif
+        Delay_us(50);
     }
 }
 
 void LCD_SetCursor(uint8_t CurY, uint8_t CurX) {
 
     LCD_WriteInstruction(0x80 + CurY * 0x40 + CurX);
-#ifndef USING_SIMULATOR
-    __delay_us(50);
-#endif
+    Delay_us(50);
 }
 
 void I2C_Slave_PIC16F1939(void) {
@@ -981,6 +965,13 @@ void I2C_Slave_PIC16F1939(void) {
         }
     }
 #endif
+}
+
+void Delay_us(uint16_t x) {
+#ifndef USING_SIMULATOR
+    __delay_us(x);
+#endif
+
 }
 /**
  End of File

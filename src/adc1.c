@@ -80,7 +80,7 @@ void ADC1Initialize(void) { /*TAD >= 117.6nS*/
     IPC3bits.AD1IP = 1;
     AD1CON1bits.ADON = 1;
 
-    __delay_us(20);
+    Delay_us(20);
     Timer3_Initialize();
 #ifndef USING_SIMULATOR
     DMA2_Initialize();

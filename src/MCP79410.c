@@ -389,9 +389,7 @@ uint8_t MCP79410_bcd2dec(uint8_t num) {
 }
 
 uint16_t MCP79410_Command(RTCCRegisterbits_t MemoryAddress, uint8_t data, I2CnWR_t nW_R) {
-#ifndef USING_SIMULATOR
-    __delay_us(7);
-#endif
+    Delay_us(7);
     I2C1_TRANSACTION_REQUEST_BLOCK readTRB[2];
     uint16_t TimeOut = 0, readData = 0;
     uint8_t Command[2], RcvData[1];

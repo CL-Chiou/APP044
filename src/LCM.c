@@ -49,9 +49,7 @@ void LCM_IOSetup(void) {
 void IntLCM_Communication(uint8_t NibbleByte) {
     uint8_t Temporary;
     //Temporary = NibbleByte & 0x0f;
-#ifndef USING_SIMULATOR
-    __delay_us(1); // tAS
-#endif
+    Delay_us(1); // tAS
 
     LCM_D7 = 0;
     LCM_D6 = 0;
@@ -75,14 +73,10 @@ void IntLCM_Communication(uint8_t NibbleByte) {
         LCM_D4 = 1;
 
     LCM_E = 1;
-#ifndef USING_SIMULATOR
-    __delay_us(1); //PWEH
-#endif
+    Delay_us(1); //PWEH
 
     LCM_E = 0;
-#ifndef USING_SIMULATOR
-    __delay_us(1); //tAH
-#endif
+    Delay_us(1); //tAH
 }
 
 uint8_t LCM_IsBusy(void) {
@@ -136,54 +130,36 @@ void LCMInitialize(void) {
     LCM_RW = 0;
 
     IntLCM_Communication(0x03); // Reset
-#ifndef USING_SIMULATOR
-    __delay_us(4100); // Wait 4.1 mSecs
-#endif
+    Delay_us(4100); // Wait 4.1 mSecs
 
     IntLCM_Communication(0x03); // Reset
-#ifndef USING_SIMULATOR
-    __delay_us(100); // Wait 100 uSecs
-#endif
+    Delay_us(100); // Wait 100 uSecs
 
     IntLCM_Communication(0x03); // Reset
-#ifndef USING_SIMULATOR
-    __delay_us(100); // Wait 100 uSecs
-#endif
+    Delay_us(100); // Wait 100 uSecs
 
     IntLCM_Communication(0x02);
-#ifndef USING_SIMULATOR
-    __delay_us(100); // Wait 100 uSecs
-#endif
+    Delay_us(100); // Wait 100 uSecs
 
     IntLCM_Communication((0x28 >> 4) & 0x0f);
     IntLCM_Communication(0x28 & 0xf);
-#ifndef USING_SIMULATOR
-    __delay_us(37);
-#endif
+    Delay_us(37);
 
     IntLCM_Communication((Disp_Off >> 4) & 0x0f); // Dsplay Off
     IntLCM_Communication(Disp_Off & 0xf);
-#ifndef USING_SIMULATOR
-    __delay_us(37);
-#endif
+    Delay_us(37);
 
     IntLCM_Communication((Disp_Clear >> 4) & 0x0f); // Dsplay Clear
     IntLCM_Communication(Disp_Clear & 0xf);
-#ifndef USING_SIMULATOR
-    __delay_us(1520);
-#endif
+    Delay_us(1520);
 
     IntLCM_Communication((Disp_Entry_Inc >> 4) & 0x0f); // Entry Mode
     IntLCM_Communication(Disp_Entry_Inc & 0xf);
-#ifndef USING_SIMULATOR
-    __delay_us(37);
-#endif
+    Delay_us(37);
 
     IntLCM_Communication((Disp_On >> 4) & 0x0f); // Display On
     IntLCM_Communication(Disp_On & 0xf);
-#ifndef USING_SIMULATOR
-    __delay_us(37);
-#endif
+    Delay_us(37);
 }
 
 void LCM_SetCursor(uint8_t Y, uint8_t X) {

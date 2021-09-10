@@ -286,6 +286,7 @@ extern "C" {
     ECANMessageBufferWord.wordData3 = ecan1msgBuf[buf][6];\
 }
 
+    void Delay_us(uint16_t x);
     void DMA0_Initialize(void); //UART1 transmitter
     void DMA1_Initialize(void); //UART1 receiver
     void DMA2_Initialize(void); //ADC1 convert done
