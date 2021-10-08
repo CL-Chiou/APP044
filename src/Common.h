@@ -260,6 +260,12 @@ extern "C" {
         I2C2 = 2
     } xI2CModules_t;
 
+    typedef enum {
+        Init,
+        Line1,
+        Line2
+    } xI2CDispStatus_t;
+
     /*Debounce*/
     typedef enum {
         bt2,

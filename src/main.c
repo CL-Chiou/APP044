@@ -83,6 +83,7 @@ xI2CLCDFlag_t I2CStatus;
 xI2CLCDIO_t I2CLCD;
 xI2CLCDAddress_t I2CAddress;
 xI2CDevice_t I2CDevice;
+xI2CDispStatus_t I2CDispStatus;
 
 xSwitchItem_t SwitchStatus, PreviousSwitchStatus;
 xTimeFlag_t TimeFlag;
@@ -112,6 +113,10 @@ void LCD_SetCursor(uint8_t CurY, uint8_t CurX);
 void LCD_PutROMString(const uint8_t *String);
 
 void I2C_Slave_PIC16F1939(void);
+void IICDisp(void);
+
+uint8_t IICDispLine1[] = "NowTime         ";
+uint8_t IICDispLine2[] = "VR1:      mV    ";
 
 int main(void) {
     // initialize the device
@@ -123,12 +128,14 @@ int main(void) {
     LCM_SetCursor(1, 0);
     LCM_PutROMString((const uint8_t*) "APP044 Exercise");
 
-    /*LCD_Initialize();
-    LCD_SetCursor(0, 0);
-    LCD_PutROMString((const uint8_t*) "Hello, World");*/
+    //    LCD_Initialize();
+    //    LCD_SetCursor(0, 0);
+    //    LCD_PutROMString((const uint8_t*) "NowTime         ");
+    //    LCD_SetCursor(1, 0);
+    //    LCD_PutROMString((const uint8_t*) "VR1:      mV    ");
 
     I2CDevice.ALL = 0xFF;
-    I2CDevice.MCP79410 = I2CDevice.MCP4551 = I2CDevice.PIC16F1939 = 0;
+    I2CDevice.MCP79410 = I2CDevice.MCP4551 = I2CDevice.PIC16F1939 = I2CDevice.LCD = 0;
     /* Enable Watch Dog Timer */
     RCONbits.SWDTEN = 1; //4ms
     if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
@@ -309,6 +316,7 @@ void Time_Execute(void) {
 
 void MultiTask(void) {
     static bool flagCAN_Tx1shot, flagCAN_TxContinuous, flagMusic1shot;
+    static uint8_t LCDLine1Character, LCDLine2Character, LCDnLine1_Line2;
     switch (++Task) {
             static uint8_t Count = 0;
         default:
@@ -530,6 +538,9 @@ void MultiTask(void) {
 #else
         rtccReadFailed = 1;
 #endif
+    }
+    if (Task % 4 == 3) {
+        IICDisp();
     }
     if (Task % 5 == 0) {
         if (++MultiTaskCnt_10ms >= 2) {
@@ -972,6 +983,127 @@ void Delay_us(uint16_t x) {
     __delay_us(x);
 #endif
 
+}
+
+void IICDisp(void) {
+    static uint8_t Status, LCDLine1Character, LCDLine2Character, Timecount, IICDispReady, Count;
+    I2CLCD.BL = I2CStatus.Enale = 1;
+    if (I2CDevice.LCD == 1) {
+        if (Timecount < 8) {
+            Timecount++;
+        } else {
+            IICDispReady = 1;
+        }
+    } else {
+        I2CDispStatus = Init;
+        Status = LCDLine1Character = LCDLine2Character = Count = Timecount = IICDispReady = 0;
+    }
+    if (IICDispReady == 1) {
+        switch (I2CDispStatus) {
+            case Init:
+                switch (Status) {
+                    default:
+                        Status = 0;
+                        Count = 0;
+                    case 0:
+                        if (Count < 3) {
+                            LCD_WriteInstruction(0x3);
+                            Count++;
+                            I2CStatus.n8bit_4bit = 1;
+                        } else {
+                            LCD_WriteInstruction(0x2);
+                            I2CStatus.n8bit_4bit = 0;
+                            Status++;
+                        }
+                        break;
+                    case 1:
+                        LCD_WriteInstruction(LCD_FOUR_BIT);
+                        Status++;
+                        break;
+                    case 2:
+                        LCD_WriteInstruction(LCD_BLINK_OFF_CURSOR_OFF);
+                        Status++;
+                        break;
+                    case 3:
+                        if (LCDLine1Character < 16) {
+                            LCD_WriteData(IICDispLine1[LCDLine1Character++]);
+                        } else {
+                            LCD_WriteInstruction(0x80 + 1 * 0x40 + 0);
+                            Status++;
+                        }
+                        break;
+                    case 4:
+                        if (LCDLine2Character < 16) {
+                            LCD_WriteData(IICDispLine2[LCDLine2Character++]);
+                        } else {
+                            I2CDispStatus = Line1;
+                            Status++;
+                        }
+                        break;
+                }
+                break;
+            case Line1:
+                switch (LCDLine1Character++) {
+                    case 0:
+                        LCD_WriteInstruction(0x80 + 0 * 0x40 + 8);
+                        break;
+                    case 1:
+                        LCD_WriteData(SystemClock.Hour / 10 + '0');
+                        break;
+                    case 2:
+                        LCD_WriteData(SystemClock.Hour % 10 + '0');
+                        break;
+                    case 3:
+                        LCD_WriteData(':');
+                        break;
+                    case 4:
+                        LCD_WriteData(SystemClock.Minute / 10 + '0');
+                        break;
+                    case 5:
+                        LCD_WriteData(SystemClock.Minute % 10 + '0');
+                        break;
+                    case 6:
+                        LCD_WriteData(':');
+                        break;
+                    case 7:
+                        LCD_WriteData(SystemClock.Second / 10 + '0');
+                        break;
+                    case 8:
+                        LCD_WriteData(SystemClock.Second % 10 + '0');
+                        break;
+                    default:
+                        I2CDispStatus = Line2;
+                        LCDLine1Character = 0;
+                        Count = 0;
+                        break;
+                }
+                break;
+            case Line2:
+                switch (LCDLine2Character++) {
+                    case 0:
+                        LCD_WriteInstruction(0x80 + 1 * 0x40 + 5);
+                        break;
+                    case 1:
+                        LCD_WriteData(POT_VAULE / 1000 + '0');
+                        break;
+                    case 2:
+                        LCD_WriteData((POT_VAULE / 100) % 10 + '0');
+                        break;
+                    case 3:
+                        LCD_WriteData((POT_VAULE % 100) / 10 + '0');
+                        break;
+                    case 4:
+                        LCD_WriteData((POT_VAULE % 100) % 10 + '0');
+                        break;
+                    default:
+                        I2CDispStatus = Line1;
+                        LCDLine2Character = 0;
+                        Count = 0;
+                        break;
+                }
+                break;
+        }
+    }
 }
 /**
  End of File
