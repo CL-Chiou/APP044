@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
     /* Config */
-#define configUSE_BUZZER 0
+#define configUSE_BUZZER 1
 #define configUSE_USBSERIAL 1
 
     /* USB */

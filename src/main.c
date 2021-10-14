@@ -128,19 +128,10 @@ int main(void) {
     LCM_SetCursor(1, 0);
     LCM_PutROMString((const uint8_t*) "APP044 Exercise");
 
-    //    LCD_Initialize();
-    //    LCD_SetCursor(0, 0);
-    //    LCD_PutROMString((const uint8_t*) "NowTime         ");
-    //    LCD_SetCursor(1, 0);
-    //    LCD_PutROMString((const uint8_t*) "VR1:      mV    ");
-
     I2CDevice.ALL = 0xFF;
     I2CDevice.MCP79410 = I2CDevice.MCP4551 = I2CDevice.PIC16F1939 = I2CDevice.LCD = 0;
     /* Enable Watch Dog Timer */
     RCONbits.SWDTEN = 1; //4ms
-    if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
-        BzMode._0 = 1;
-    }
     while (1) {
         Time_Execute();
     }
@@ -318,8 +309,18 @@ void MultiTask(void) {
     static bool flagCAN_Tx1shot, flagCAN_TxContinuous, flagMusic1shot;
     static uint8_t LCDLine1Character, LCDLine2Character, LCDnLine1_Line2;
     switch (++Task) {
-            static uint8_t Count = 0;
+            static uint8_t Count = 0, SetupCompleted, SetupCompletedCount;
         default:
+            if (SetupCompleted == 0) {
+                if (SetupCompletedCount < 5) {
+                    SetupCompletedCount++;
+                } else {
+                    if (I2CDevice.MCP4551 == 1 && I2CDevice.MCP79410 == 1) {
+                        BzMode._0 = 1;
+                    }
+                    SetupCompleted = 1;
+                }
+            }
             Task = 0;
         case 0:
             if (SwitchStatus.byteTACT != 0 || SwitchStatus.byteDIP != 0) { /*Freq: 50Hz*/
