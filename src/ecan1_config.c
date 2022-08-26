@@ -9,7 +9,7 @@
 
   Summary:
     Initializes and configures the ECAN1 and DMA modules.
-    
+
   Description:
     This source file initializes the DMA and configures two DMA channels one
     each for transmission and reception. The ECAN is also initialized, its clock
@@ -43,8 +43,10 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-#include <xc.h>
 #include "ecan1_config.h"
+
+#include <xc.h>
+
 #include "common.h"
 
 /******************************************************************************
@@ -66,11 +68,11 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
  *****************************************************************************/
 void DMA5_Initialize(void) {
     DMA5CON = 0x2020;
-    DMA5PAD = (volatile uint16_t) &C1TXD; /* ECAN 1 (C1TXD) */
+    DMA5PAD = (volatile uint16_t) & C1TXD; /* ECAN 1 (C1TXD) */
     DMA5CNT = 0x0007;
     DMA5REQ = 0x0046; /* ECAN 1 Transmit */
 
-    DMA5STAL = (uint16_t) (int_least24_t) (&ecan1msgBuf);
+    DMA5STAL = (uint16_t)(int_least24_t)(&ecan1msgBuf);
     DMA5STAH = 0;
 
     DMA5CONbits.CHEN = 1;
@@ -95,12 +97,12 @@ void DMA5_Initialize(void) {
  *****************************************************************************/
 void DMA6_Initialize(void) {
     DMA6CON = 0x0020;
-    DMA6PAD = (volatile uint16_t) &C1RXD; /* ECAN 1 (C1RXD) */
+    DMA6PAD = (volatile uint16_t) & C1RXD; /* ECAN 1 (C1RXD) */
     DMA6CNT = 0x0007;
     DMA6REQ = 0x0022; /* ECAN 1 Receive */
 
-    DMA6STAL = (uint16_t) (int_least24_t) (&ecan1msgBuf);
-    DMA6STAH = 0;
+    DMA6STAL         = (uint16_t)(int_least24_t)(&ecan1msgBuf);
+    DMA6STAH         = 0;
     DMA6CONbits.CHEN = 1;
 }
 
@@ -121,7 +123,7 @@ void DMA6_Initialize(void) {
  *****************************************************************************/
 void Ecan1ClkInit(void) {
     /*  FCAN is selected to be FCY
-            FCAN = FCY = 60MHz 
+            FCAN = FCY = 60MHz
 
     Bit Time = (Sync Segment + Propagation Delay + Phase Segment 1 + Phase Segment 2)=20*TQ = N
     Phase Segment 1 = 8TQ
@@ -130,7 +132,7 @@ void Ecan1ClkInit(void) {
     Sync Segment = 1TQ
     CiCFG1<BRP> =(FCAN /(2 * N/FBAUD))-1
 
-    Definition in ecan1_config.h as below 
+    Definition in ecan1_config.h as below
     #define CAN1_BRP_VAL ( (FCAN / (2 * NTQ * CAN1_BITRATE)) - 1 )
      */
 
@@ -176,14 +178,15 @@ void Ecan1ClkInit(void) {
 void ECAN1Initialize(void) {
     /* Request Configuration Mode */
     C1CTRL1bits.REQOP = 4;
-    while (C1CTRL1bits.OPMODE != 4);
+    while (C1CTRL1bits.OPMODE != 4)
+        ;
 
     C1CTRL1bits.CANCKS = 1;
 
     Ecan1ClkInit();
 
-    C1FCTRLbits.FSA = 0b01000; /* FIFO Starts at Message Buffer 8 */
-    C1FCTRLbits.DMABS = 0b100; /* 16 CAN Message Buffers in DMA RAM */
+    C1FCTRLbits.FSA   = 0b01000; /* FIFO Starts at Message Buffer 8 */
+    C1FCTRLbits.DMABS = 0b100;   /* 16 CAN Message Buffers in DMA RAM */
 
     /*	Filter Configuration
 
@@ -191,10 +194,10 @@ void ECAN1Initialize(void) {
 
     n = 0 to 15 -> Filter number
 
-    identifier -> SID <10:0> : EID <17:0> 
+    identifier -> SID <10:0> : EID <17:0>
 
-    exide = 0 -> Match messages with standard identifier addresses 
-    exide = 1 -> Match messages with extended identifier addresses 
+    exide = 0 -> Match messages with standard identifier addresses
+    exide = 1 -> Match messages with extended identifier addresses
 
     bufPnt = 0 to 14  -> RX Buffer 0 to 14
     bufPnt = 15 -> RX FIFO Buffer
@@ -203,20 +206,20 @@ void ECAN1Initialize(void) {
     maskSel = 1    ->    Acceptance Mask 1 register contains mask
     maskSel = 2    ->    Acceptance Mask 2 register contains mask
     maskSel = 3    ->    No Mask Selection
-    
+
      */
 
-    Ecan1WriteRxAcptFilter(5, CANRX_ID_1, 1, 4, 0); // Filter 5
-    Ecan1WriteRxAcptFilter(6, CANTX_ID_TRIGGER, 1, 6, 1); // Filter 6
-    Ecan1WriteRxAcptFilter(9, CANRX_ID_2, 1, 7, 2); // Filter 9
+    Ecan1WriteRxAcptFilter(5, CANRX_ID_1, 1, 4, 0);        // Filter 5
+    Ecan1WriteRxAcptFilter(6, CANTX_ID_TRIGGER, 1, 6, 1);  // Filter 6
+    Ecan1WriteRxAcptFilter(9, CANRX_ID_2, 1, 7, 2);        // Filter 9
     /*    Mask Configuration
     Ecan1WriteRxAcptMask(int m, long identifierMask, uint16_t mide, uint16_t exide)
     m = 0 to 2 -> Mask Number
-    identifier -> SID <10:0> : EID <17:0> 
-    mide = 0 -> Match either standard or extended address message if filters match 
+    identifier -> SID <10:0> : EID <17:0>
+    mide = 0 -> Match either standard or extended address message if filters match
     mide = 1 -> Match only message types that correpond to 'exide' bit in filter
 
-    exide = 0 -> Match messages with standard identifier addresses 
+    exide = 0 -> Match messages with standard identifier addresses
     exide = 1 -> Match messages with extended identifier addresses
      */
     Ecan1WriteRxAcptMask(0, 0x01FFFFFFE, 1, 1);
@@ -226,22 +229,23 @@ void ECAN1Initialize(void) {
     /* Enter Normal Mode */
     C1CTRL1bits.REQOP = 0;
 #ifndef USING_SIMULATOR
-    while (C1CTRL1bits.OPMODE != 0);
+    while (C1CTRL1bits.OPMODE != 0)
+        ;
 #endif
 
     /* ECAN transmit/receive message control */
     C1RXFUL1 = C1RXFUL2 = C1RXOVF1 = C1RXOVF2 = 0x0000;
-    C1TR01CONbits.TXEN0 = 1; /* ECAN1, Buffer 0 is a Transmit Buffer */
-    C1TR01CONbits.TXEN1 = 1; /* ECAN1, Buffer 1 is a Transmit Buffer */
-    C1TR23CONbits.TXEN2 = 1; /* ECAN1, Buffer 2 is a Transmit Buffer */
-    C1TR23CONbits.TXEN3 = 1; /* ECAN1, Buffer 3 is a Transmit Buffer */
+    C1TR01CONbits.TXEN0                       = 1; /* ECAN1, Buffer 0 is a Transmit Buffer */
+    C1TR01CONbits.TXEN1                       = 1; /* ECAN1, Buffer 1 is a Transmit Buffer */
+    C1TR23CONbits.TXEN2                       = 1; /* ECAN1, Buffer 2 is a Transmit Buffer */
+    C1TR23CONbits.TXEN3                       = 1; /* ECAN1, Buffer 3 is a Transmit Buffer */
 
     C1TR01CONbits.TX0PRI = 0b00; /* Message Buffer 0 Priority Level */
     C1TR01CONbits.TX1PRI = 0b01; /* Message Buffer 1 Priority Level */
     C1TR23CONbits.TX2PRI = 0b10; /* Message Buffer 2 Priority Level */
     C1TR23CONbits.TX3PRI = 0b11; /* Message Buffer 3 Priority Level */
 
-    IEC2bits.C1IE = 1;
+    IEC2bits.C1IE   = 1;
     C1INTEbits.TBIE = 1;
     C1INTEbits.RBIE = 1;
 
@@ -250,7 +254,7 @@ void ECAN1Initialize(void) {
 }
 
 void __attribute__((interrupt, no_auto_psv)) _DMA5Interrupt(void) {
-    IFS3bits.DMA5IF = 0; // Clear the DMA5 Interrupt Flag;
+    IFS3bits.DMA5IF = 0;  // Clear the DMA5 Interrupt Flag;
 }
 
 /*******************************************************************************

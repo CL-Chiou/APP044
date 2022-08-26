@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   adc.h
  * Author: user
  *
@@ -6,25 +6,23 @@
  */
 
 #ifndef ADC_H
-#define	ADC_H
+#define ADC_H
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-    enum {
-        AN3,
-        AN0,
-        AN1,
-        AN2
-    };
-    
-    void ADC1Initialize(void);
+enum {
+    AN3,
+    AN0,
+    AN1,
+    AN2
+};
 
+void ADC1Initialize(void);
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* ADC_H */
-
+#endif /* ADC_H */

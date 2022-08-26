@@ -40,10 +40,9 @@ typedef enum {
 } pot_memoryaddress;
 
 typedef union {
-
     struct {
-        unsigned Data8 : 1;
-        unsigned : 1;
+        unsigned Data8                  : 1;
+        unsigned                        : 1;
         pot_operationbits OperationBits : 2;
         pot_memoryaddress MemoryAddress : 4;
 
@@ -54,4 +53,4 @@ typedef union {
 
 uint16_t MCP4551_Command(pot_memoryaddress MemoryAddress, pot_operationbits OperationBits, uint16_t Data);
 
-#endif //MCP4551_H
+#endif  // MCP4551_H

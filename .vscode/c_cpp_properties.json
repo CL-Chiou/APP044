@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "XC16",
+            "includePath": [
+                "${workspaceFolder}/src",
+                "C:/Program Files/Microchip/xc16/v2.00/include",
+                "C:/Program Files/Microchip/xc16/v2.00/support/dsPIC33E/h",
+                "C:/Program Files/Microchip/xc16/v2.00/support/generic/h"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "__dsPIC33EP512MU810__",
+                "__XC16__",
+                "__dsPIC33E__",
+                "__prog__=",
+                "__eds__="
+            ],
+            "cStandard": "c89",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x86",
+            "compilerPath": "C:/Program Files/Microchip/xc16/v2.00/bin/xc16-gcc.exe"
+        }
+    ],
+    "version": 4
+}

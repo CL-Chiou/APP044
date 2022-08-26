@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Timers.h
  * Author: user
  *
@@ -6,22 +6,18 @@
  */
 
 #ifndef TIMERS_H
-#define	TIMERS_H
+#define TIMERS_H
 
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 
 #endif
 
-    void Timer1Initialize(void);
-    void Timer3_Initialize(void);
+void Timer1Initialize(void);
+void Timer3_Initialize(void);
 
-
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* TIMERS_H */
-
+#endif /* TIMERS_H */

@@ -14,14 +14,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-To request to license the code under the MLA license (www.microchip.com/mla_license), 
+To request to license the code under the MLA license (www.microchip.com/mla_license),
 please contact mla_licensing@microchip.com
 *******************************************************************************/
-//DOM-IGNORE-END
+// DOM-IGNORE-END
 
 /** INCLUDES *******************************************************/
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "usb_device.h"
 #include "usb_device_cdc.h"
 
@@ -46,10 +47,8 @@ please contact mla_licensing@microchip.com
  *
  * Note:            None
  *******************************************************************/
-bool USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, uint16_t size)
-{
-    switch( (int) event )
-    {
+bool USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, uint16_t size) {
+    switch ((int)event) {
         case EVENT_TRANSFER:
             break;
 
@@ -57,19 +56,19 @@ bool USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, uint16_t size
             break;
 
         case EVENT_SUSPEND:
-            //Call the hardware platform specific handler for suspend events for
-            //possible further action (like optionally going reconfiguring the application
-            //for lower power states and going to sleep during the suspend event).  This
-            //would normally be done in USB compliant bus powered applications, although
-            //no further processing is needed for purely self powered applications that
-            //don't consume power from the host.
+            // Call the hardware platform specific handler for suspend events for
+            // possible further action (like optionally going reconfiguring the application
+            // for lower power states and going to sleep during the suspend event).  This
+            // would normally be done in USB compliant bus powered applications, although
+            // no further processing is needed for purely self powered applications that
+            // don't consume power from the host.
             break;
 
         case EVENT_RESUME:
-            //Call the hardware platform specific resume from suspend handler (ex: to
-            //restore I/O pins to higher power states if they were changed during the 
-            //preceding SYSTEM_Initialize(SYSTEM_STATE_USB_SUSPEND) call at the start
-            //of the suspend condition.
+            // Call the hardware platform specific resume from suspend handler (ex: to
+            // restore I/O pins to higher power states if they were changed during the
+            // preceding SYSTEM_Initialize(SYSTEM_STATE_USB_SUSPEND) call at the start
+            // of the suspend condition.
             break;
 
         case EVENT_CONFIGURED:
@@ -97,7 +96,6 @@ bool USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, uint16_t size
     return true;
 }
 
-void __attribute__((interrupt,auto_psv)) _USB1Interrupt()
-{
+void __attribute__((interrupt, auto_psv)) _USB1Interrupt() {
     USBDeviceTasks();
 }

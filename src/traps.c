@@ -20,86 +20,94 @@ of their application. */
 // OSCFAIL: Oscillator Failure Trap Status bit
 
 void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
-    INTCON1bits.OSCFAIL = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON1bits.OSCFAIL = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 // ADDRERR: Address Error Trap Status bit
 // DS read access when DSRPAG = 0x000 will force an Address Error trap.
 
 void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
-    INTCON1bits.ADDRERR = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON1bits.ADDRERR = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 // SGHT: Software Generated Hard Trap Status bit
 
 void __attribute__((interrupt, no_auto_psv)) _HardTrapError(void) {
-    INTCON4bits.SGHT = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON4bits.SGHT = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 // STKERR: Stack Error Trap Status bit
 
 void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
-    INTCON1bits.STKERR = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON1bits.STKERR = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 // MATHERR: Math Error Status bit
 
 void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
-    INTCON1bits.MATHERR = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON1bits.MATHERR = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 // DMACERR: DMAC Trap Flag bit
 
 void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
-    INTCON1bits.DMACERR = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON1bits.DMACERR = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 // SWTRAP: Software Trap Status bit
 
 void __attribute__((interrupt, no_auto_psv)) _SoftTrapError(void) {
-    INTCON2bits.SWTRAP = 0; //Clear the trap flag
-#ifdef __DEBUG    
+    INTCON2bits.SWTRAP = 0;  // Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }
 //================================================================
 
-void __attribute__((interrupt, no_auto_psv)) _ReservedTrap7(void) { // INTCON1bits.DMACERR = 0; //Clear the trap flag
-#ifdef __DEBUG    
+void __attribute__((interrupt, no_auto_psv)) _ReservedTrap7(void) {  // INTCON1bits.DMACERR = 0; //Clear the trap flag
+#ifdef __DEBUG
     __builtin_software_breakpoint();
     /* If we are in debug mode, cause a software breakpoint in the debugger */
 #endif
-    while (1);
+    while (1)
+        ;
 }

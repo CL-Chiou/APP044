@@ -20,19 +20,20 @@
  CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
  *******************************************************************/
 
-#include <xc.h>
 #include "MP_Car_leds.h"
+
 #include <stdbool.h>
+#include <xc.h>
 
-#define LED_D1_LAT      LATAbits.LATA5
-#define LED_D2_LAT      LATAbits.LATA4
-#define LED_D3_LAT      LATAbits.LATA3
-#define LED_D4_LAT      LATAbits.LATA2
+#define LED_D1_LAT LATAbits.LATA5
+#define LED_D2_LAT LATAbits.LATA4
+#define LED_D3_LAT LATAbits.LATA3
+#define LED_D4_LAT LATAbits.LATA2
 
-#define LED_D1_TRIS     TRISAbits.TRISA5
-#define LED_D2_TRIS     TRISAbits.TRISA4
-#define LED_D3_TRIS     TRISAbits.TRISA3
-#define LED_D4_TRIS     TRISAbits.TRISA2
+#define LED_D1_TRIS TRISAbits.TRISA5
+#define LED_D2_TRIS TRISAbits.TRISA4
+#define LED_D3_TRIS TRISAbits.TRISA3
+#define LED_D4_TRIS TRISAbits.TRISA2
 
 #define LED_ON  1
 #define LED_OFF 0
@@ -176,20 +177,19 @@ void LEDToggle(LED led) {
 bool LEDGet(LED led) {
     switch (led) {
         case LED_D1:
-            return ( (LED_D1_LAT == LED_ON) ? true : false);
+            return ((LED_D1_LAT == LED_ON) ? true : false);
 
         case LED_D2:
-            return ( (LED_D2_LAT == LED_ON) ? true : false);
+            return ((LED_D2_LAT == LED_ON) ? true : false);
 
         case LED_D3:
-            return ( (LED_D3_LAT == LED_ON) ? true : false);
+            return ((LED_D3_LAT == LED_ON) ? true : false);
 
         case LED_D4:
-            return ( (LED_D4_LAT == LED_ON) ? true : false);
+            return ((LED_D4_LAT == LED_ON) ? true : false);
 
         case LED_NONE:
             return false;
-
     }
     return false;
 }
@@ -211,7 +211,6 @@ bool LEDGet(LED led) {
  ********************************************************************/
 void LEDEnable(LED led) {
     switch (led) {
-
         case LED_D1:
             LED_D1_TRIS = OUTPUT;
             break;
@@ -235,7 +234,6 @@ void LEDEnable(LED led) {
 
 void LEDDisable(LED led) {
     switch (led) {
-
         case LED_D1:
             LED_D1_TRIS = INPUT;
             break;
@@ -256,4 +254,3 @@ void LEDDisable(LED led) {
             break;
     }
 }
-

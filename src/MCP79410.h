@@ -34,13 +34,13 @@ typedef enum {
 
 typedef enum {
     /*Section 5.3 “Timekeeping”*/
-    RTCSEC, // Register Address: Time Second
-    RTCMIN, // Register Address: Time Minute
-    RTCHOUR, // Register Address: Time Hour
-    RTCWKDAY, // Register Address: Date Day of Week
-    RTCDATE, // Register Address: Date Day
-    RTCMTH, // Register Address: Date Month
-    RTCYEAR, // Register Address: Date Year
+    RTCSEC,    // Register Address: Time Second
+    RTCMIN,    // Register Address: Time Minute
+    RTCHOUR,   // Register Address: Time Hour
+    RTCWKDAY,  // Register Address: Date Day of Week
+    RTCDATE,   // Register Address: Date Day
+    RTCMTH,    // Register Address: Date Month
+    RTCYEAR,   // Register Address: Date Year
     CONTROL,
     OSCTRIM,
     EEUNLOCK,
@@ -125,80 +125,80 @@ typedef enum xMFP_POL {
 } Polarity_t;
 
 /************************GLOBAL CONSTANTS RTCC - INITIALIZATION****************/
-#define TRUE    1
-#define FALSE   0
+#define TRUE  1
+#define FALSE 0
 
-#define  PM                0x20       //  post-meridian bit (HOUR)
-#define  HOUR_FORMAT       0x40       //  Hour format
-#define  OUT_PIN           0x80       //  = b7 (CTRL)
-#define  SQWEN             0x40       //  SQWE = b6 (CTRL)
-#define  ALM_NO            0x00       //  no alarm activated        (CTRL)
-#define  ALM_0             0x10       //  ALARM0 is       activated (CTRL)
-#define  ALM_1             0x20       //  ALARM1 is       activated (CTRL)
-#define  ALM_01            0x30       //  both alarms are activated (CTRL)
-#define  MFP_01H           0x00       //  MFP = SQVAW(01 HERZ)      (CTRL)
-#define  MFP_04K           0x01       //  MFP = SQVAW(04 KHZ)       (CTRL)
-#define  MFP_08K           0x02       //  MFP = SQVAW(08 KHZ)       (CTRL)
-#define  MFP_32K           0x03       //  MFP = SQVAW(32 KHZ)       (CTRL)
-#define  MFP_64H           0x04       //  MFP = SQVAW(64 HERZ)      (CTRL)
-#define  ALMx_POL          0x80       //  polarity of MFP on alarm  (ALMxCTL)
-#define  ALMxC_SEC         0x00       //  ALARM compare on SEC      (ALMxCTL)
-#define  ALMxC_MIN         0x10       //  ALARM compare on MIN      (ALMxCTL)
-#define  ALMxC_HR          0x20       //  ALARM compare on HOUR     (ALMxCTL)
-#define  ALMxC_DAY         0x30       //  ALARM compare on DAY      (ALMxCTL)
-#define  ALMxC_DAT         0x40       //  ALARM compare on DATE     (ALMxCTL)
-#define  ALMxC_ALL         0x70       //  ALARM compare on all param(ALMxCTL)
-#define  ALMx_IF           0x08       //  MASK of the ALARM_IF      (ALMxCTL)
+#define PM          0x20  //  post-meridian bit (HOUR)
+#define HOUR_FORMAT 0x40  //  Hour format
+#define OUT_PIN     0x80  //  = b7 (CTRL)
+#define SQWEN       0x40  //  SQWE = b6 (CTRL)
+#define ALM_NO      0x00  //  no alarm activated        (CTRL)
+#define ALM_0       0x10  //  ALARM0 is       activated (CTRL)
+#define ALM_1       0x20  //  ALARM1 is       activated (CTRL)
+#define ALM_01      0x30  //  both alarms are activated (CTRL)
+#define MFP_01H     0x00  //  MFP = SQVAW(01 HERZ)      (CTRL)
+#define MFP_04K     0x01  //  MFP = SQVAW(04 KHZ)       (CTRL)
+#define MFP_08K     0x02  //  MFP = SQVAW(08 KHZ)       (CTRL)
+#define MFP_32K     0x03  //  MFP = SQVAW(32 KHZ)       (CTRL)
+#define MFP_64H     0x04  //  MFP = SQVAW(64 HERZ)      (CTRL)
+#define ALMx_POL    0x80  //  polarity of MFP on alarm  (ALMxCTL)
+#define ALMxC_SEC   0x00  //  ALARM compare on SEC      (ALMxCTL)
+#define ALMxC_MIN   0x10  //  ALARM compare on MIN      (ALMxCTL)
+#define ALMxC_HR    0x20  //  ALARM compare on HOUR     (ALMxCTL)
+#define ALMxC_DAY   0x30  //  ALARM compare on DAY      (ALMxCTL)
+#define ALMxC_DAT   0x40  //  ALARM compare on DATE     (ALMxCTL)
+#define ALMxC_ALL   0x70  //  ALARM compare on all param(ALMxCTL)
+#define ALMx_IF     0x08  //  MASK of the ALARM_IF      (ALMxCTL)
 
-#define  OSCRUN            0x20       //  state of the oscillator(running or not)
-#define  PWRFAIL           0x10
-#define  VBATEN            0x08       //  enable battery for back-up
-#define  VBAT_DIS          0x37       //  disable battery back-up
-#define  START_32KHZ       0x80       //  start crystal: ST = b7 (SEC)
-#define  LP                0x20       //  mask for the leap year bit(MONTH REG)
-#define  HOUR_12           0x40       //  12 hours format   (HOUR)
+#define OSCRUN      0x20  //  state of the oscillator(running or not)
+#define PWRFAIL     0x10
+#define VBATEN      0x08  //  enable battery for back-up
+#define VBAT_DIS    0x37  //  disable battery back-up
+#define START_32KHZ 0x80  //  start crystal: ST = b7 (SEC)
+#define LP          0x20  //  mask for the leap year bit(MONTH REG)
+#define HOUR_12     0x40  //  12 hours format   (HOUR)
 
-#define  LPYR              0x20
+#define LPYR 0x20
 
-#define ALM1MSK2           0x40
-#define ALM1MSK1           0x20
-#define ALM1MSK0           0x10
+#define ALM1MSK2 0x40
+#define ALM1MSK1 0x20
+#define ALM1MSK0 0x10
 
-#define ALM0MSK2           0x40
-#define ALM0MSK1           0x20
-#define ALM0MSK0           0x10
+#define ALM0MSK2 0x40
+#define ALM0MSK1 0x20
+#define ALM0MSK0 0x10
 
-void MCP79410_Initialize(void);
-void MCP79410_EnableOscillator(void);
-void MCP79410_DisableOscillator(void);
+void    MCP79410_Initialize(void);
+void    MCP79410_EnableOscillator(void);
+void    MCP79410_DisableOscillator(void);
 uint8_t MCP79410_IsRunning(void);
 
 void MCP79410_GetTime(void);
-void MCP79410_SetTime(RTCC_t *time);
+void MCP79410_SetTime(RTCC_t* time);
 void MCP79410_SetHourFormat(Format_t format);
 void MCP79410_SetPMAM(PMAM_t meridian);
 
-void MCP79410_EnableAlarm(Alarm_t alarm);
-void MCP79410_DisableAlarm(Alarm_t alarm);
+void          MCP79410_EnableAlarm(Alarm_t alarm);
+void          MCP79410_DisableAlarm(Alarm_t alarm);
 AlarmStatus_t MCP79410_GetAlarmStatus(Alarm_t alarm);
-void MCP79410_ClearInterruptFlag(Alarm_t alarm);
-void MCP79410_SetAlarmTime(RTCC_t *time, Alarm_t alarm);
-void MCP79410_SetAlarmMFPPolarity(Polarity_t MFP_pol, Alarm_t alarm);
-void MCP79410_SetAlarmMatch(Match_t match, Alarm_t alarm);
-void MCP79410_SetMFP_Functionality(MFP_t mode);
-void MCP79410_SetMFP_GPOStatus(Polarity_t status);
+void          MCP79410_ClearInterruptFlag(Alarm_t alarm);
+void          MCP79410_SetAlarmTime(RTCC_t* time, Alarm_t alarm);
+void          MCP79410_SetAlarmMFPPolarity(Polarity_t MFP_pol, Alarm_t alarm);
+void          MCP79410_SetAlarmMatch(Match_t match, Alarm_t alarm);
+void          MCP79410_SetMFP_Functionality(MFP_t mode);
+void          MCP79410_SetMFP_GPOStatus(Polarity_t status);
 
 uint8_t MCP79410_CheckPowerFailure(void);
 uint8_t MCP79410_IsVbatEnabled(void);
-void MCP79410_EnableVbat(void);
-void MCP79410_DisableVbat(void);
+void    MCP79410_EnableVbat(void);
+void    MCP79410_DisableVbat(void);
 RTCC_t* MCP79410_GetPowerUpTime(void);
 RTCC_t* MCP79410_GetPowerDownTime(void);
 
-uint8_t MCP79410_dec2bcd(uint8_t num);
-uint8_t MCP79410_bcd2dec(uint8_t num);
+uint8_t  MCP79410_dec2bcd(uint8_t num);
+uint8_t  MCP79410_bcd2dec(uint8_t num);
 uint16_t MCP79410_Command(RTCCRegisterbits_t MemoryAddress, uint8_t data, I2CnWR_t nW_R);
 
 void MCP79410_EnableVbat(void);
 
-#endif //MCP79410_H
+#endif  // MCP79410_H

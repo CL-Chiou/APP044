@@ -49,47 +49,47 @@
  Section: Included Files
 */
 
-#include <xc.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <xc.h>
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 
-    extern "C" {
+extern "C" {
 
 #endif
 
 /**
  Section: Data Type Definitions
 */
-        
+
 /**
-  SPI1_DUMMY_DATA 
+  SPI1_DUMMY_DATA
 
   @Summary
-    Dummy data to be sent. 
+    Dummy data to be sent.
 
   @Description
     Dummy data to be sent, when no input buffer is specified in the buffer APIs.
  */
 #define SPI1_DUMMY_DATA 0x0
-		
+
 /**
   SPI1_FIFO_FILL_LIMIT
 
   @Summary
-    FIFO fill limit for data transmission. 
+    FIFO fill limit for data transmission.
 
   @Description
     The amount of data to be filled in the FIFO during transmission. The maximum limit allowed is 8.
  */
 #define SPI1_FIFO_FILL_LIMIT 0x8
 
-//Check to make sure that the FIFO limit does not exceed the maximum allowed limit of 8
+// Check to make sure that the FIFO limit does not exceed the maximum allowed limit of 8
 #if (SPI1_FIFO_FILL_LIMIT > 8)
 
-    #define SPI1_FIFO_FILL_LIMIT 8
+#define SPI1_FIFO_FILL_LIMIT 8
 
 #endif
 
@@ -103,12 +103,12 @@
     This defines the status enumeration for SPI1.
  */
 typedef enum {
-    SPI1_SHIFT_REGISTER_EMPTY  = 1 << 7,
-    SPI1_RECEIVE_OVERFLOW = 1 << 6,
-    SPI1_RECEIVE_FIFO_EMPTY = 1 << 5,
+    SPI1_SHIFT_REGISTER_EMPTY = 1 << 7,
+    SPI1_RECEIVE_OVERFLOW     = 1 << 6,
+    SPI1_RECEIVE_FIFO_EMPTY   = 1 << 5,
     SPI1_TRANSMIT_BUFFER_FULL = 1 << 1,
-    SPI1_RECEIVE_BUFFER_FULL = 1 << 0
-}SPI1_STATUS;
+    SPI1_RECEIVE_BUFFER_FULL  = 1 << 0
+} SPI1_STATUS;
 
 /**
   SPI1 Mode Enumeration
@@ -120,9 +120,9 @@ typedef enum {
     This defines the mode of operation for SPI1.
  */
 typedef enum {
-    SPI1_DRIVER_TRANSFER_MODE_8BIT   = 0,
-    SPI1_DRIVER_TRANSFER_MODE_16BIT  = 1,
-    SPI1_DRIVER_TRANSFER_MODE_32BIT  = 2,
+    SPI1_DRIVER_TRANSFER_MODE_8BIT  = 0,
+    SPI1_DRIVER_TRANSFER_MODE_16BIT = 1,
+    SPI1_DRIVER_TRANSFER_MODE_32BIT = 2,
 } SPI1_TRANSFER_MODE;
 
 /**
@@ -139,7 +139,7 @@ typedef enum {
 
     This routine must be called before any other SPI1 routine is called.
     This routine should only be called once during system initialization.
- 
+
   @Preconditions
     None.
 
@@ -163,7 +163,8 @@ typedef enum {
     numberOfBytesFactor = 2;
     do
     {
-        total  = SPI1_Exchange16bitBuffer( &myWriteBuffer[total], (MY_BUFFER_SIZE - total)*numberOfBytesFactor, &myReadBuffer[total]);
+        total  = SPI1_Exchange16bitBuffer( &myWriteBuffer[total], (MY_BUFFER_SIZE - total)*numberOfBytesFactor,
+  &myReadBuffer[total]);
 
         // Do something else...
 
@@ -177,7 +178,7 @@ typedef enum {
 
 */
 
-void SPI1Initialize (void);
+void SPI1Initialize(void);
 
 /**
   @Summary
@@ -190,8 +191,8 @@ void SPI1Initialize (void);
   @Preconditions
     The SPI1_Initialize routine must have been called for the specified
     SPI1 driver instance.
-    The SPI transfer mode should be selected as 16bit mode in the initialization. 
-    Do not select 8 bit mode, only the lower byte of the data will sent or received if selected. 
+    The SPI transfer mode should be selected as 16bit mode in the initialization.
+    Do not select 8 bit mode, only the lower byte of the data will sent or received if selected.
 
   @Returns
     Data read from SPI1
@@ -199,12 +200,12 @@ void SPI1Initialize (void);
   @Param
     data         - Data to be written onto SPI1.
 
-  @Example 
-    Refer to SPI1_Initialize() for an example	
- 
+  @Example
+    Refer to SPI1_Initialize() for an example
+
 */
 
-uint16_t SPI1_Exchange16bit( uint16_t data );
+uint16_t SPI1_Exchange16bit(uint16_t data);
 
 /**
   @Summary
@@ -217,28 +218,27 @@ uint16_t SPI1_Exchange16bit( uint16_t data );
   @Preconditions
     The SPI1_Initialize routine must have been called for the specified
     SPI1 driver instance.
-    The SPI transfer mode should be selected as 16bit mode in the initialization. 
-    Do not select 8 bit mode, only the lower byte of the data will sent or received if selected. 
+    The SPI transfer mode should be selected as 16bit mode in the initialization.
+    Do not select 8 bit mode, only the lower byte of the data will sent or received if selected.
 
   @Returns
     Number of 16bit data written/read.
 
   @Param
     dataTransmitted         - Buffer of data to be written onto SPI1.
- 
+
   @Param
     byteCount         - Number of bytes to be exchanged.
- 
+
   @Param
     dataTransmitted         - Buffer of data to be read from SPI1.
 
-  @Example 
-    Refer to SPI1_Initialize() for an example	
- 
+  @Example
+    Refer to SPI1_Initialize() for an example
+
 */
 
 uint16_t SPI1_Exchange16bitBuffer(uint16_t *dataTransmitted, uint16_t byteCount, uint16_t *dataReceived);
-
 
 /**
   @Summary
@@ -256,21 +256,20 @@ uint16_t SPI1_Exchange16bitBuffer(uint16_t *dataTransmitted, uint16_t byteCount,
   @Param
     None.
 
-  @Example 
-    Refer to SPI1_Initialize() for an example	
- 
+  @Example
+    Refer to SPI1_Initialize() for an example
+
 */
 
 SPI1_STATUS SPI1_StatusGet(void);
 
 #ifdef __cplusplus  // Provide C++ Compatibility
-
-    }
+}
 
 #endif
 
-#endif //_SPI1_H
-    
+#endif  //_SPI1_H
+
 /*******************************************************************************
  End of File
 */

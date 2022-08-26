@@ -31,22 +31,21 @@ typedef enum {
 } A_B;
 
 typedef enum {
-    _2x, //0 = 2x (VOUT = 2 * VREF * D/4096)
-    _1x //1 = 1x (VOUT = VREF * D/4096)
+    _2x,  // 0 = 2x (VOUT = 2 * VREF * D/4096)
+    _1x   // 1 = 1x (VOUT = VREF * D/4096)
 } GA;
 
 typedef union {
-
     struct {
         unsigned Data11_0 : 12;
-        unsigned nSHDN : 1;
-        GA nGA : 1;
-        unsigned BUF : 1;
-        A_B nA_B : 1;
+        unsigned nSHDN    : 1;
+        GA       nGA      : 1;
+        unsigned BUF      : 1;
+        A_B      nA_B     : 1;
     };
     uint16_t Int;
 } mcp4922cmd;
 
 void MCP4922_2SineOutput(void);
 
-#endif //MCP4922_H
+#endif  // MCP4922_H

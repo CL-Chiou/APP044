@@ -47,15 +47,16 @@
   Section: Included Files
  */
 
-#include "Common.h"
 #include "spi1.h"
+
+#include "Common.h"
 
 /**
  Section: File specific functions
  */
 
 inline __attribute__((__always_inline__)) SPI1_TRANSFER_MODE SPI1_TransferModeGet(void);
-void SPI1_Exchange(uint8_t *pTransmitData, uint8_t *pReceiveData);
+void     SPI1_Exchange(uint8_t *pTransmitData, uint8_t *pReceiveData);
 uint16_t SPI1_ExchangeBuffer(uint8_t *pTransmitData, uint16_t byteCount, uint8_t *pReceiveData);
 
 /*DMA Buffer*/
@@ -70,30 +71,28 @@ static void SPI1CallBack(void);
  Section: Driver Interface Function Definitions
  */
 
-
 void SPI1Initialize(void) {
-
     IEC0bits.SPI1EIE = 0;
-    IEC0bits.SPI1IE = 0;
+    IEC0bits.SPI1IE  = 0;
 
     SPI1CON1bits.SPRE = 8 - 4;
     SPI1CON1bits.PPRE = 3;
 
     SPI1CON1bits.MODE16 = 1;
-    SPI1CON1bits.MSTEN = 1;
-    SPI1CON1bits.CKP = 0;
-    SPI1CON1bits.CKE = 1;
+    SPI1CON1bits.MSTEN  = 1;
+    SPI1CON1bits.CKP    = 0;
+    SPI1CON1bits.CKE    = 1;
 
-    SPI1CON2bits.FRMEN = 0;
+    SPI1CON2bits.FRMEN  = 0;
     SPI1CON2bits.SPIFSD = 0;
     SPI1CON2bits.FRMPOL = 1;
     SPI1CON2bits.FRMDLY = 0;
     SPI1CON2bits.SPIBEN = 0;
 
     SPI1STATbits.SPISIDL = 0;
-    SPI1STATbits.SPIBEC = 0;
-    SPI1STATbits.SPIROV = 0;
-    SPI1STATbits.SPIEN = 1;
+    SPI1STATbits.SPIBEC  = 0;
+    SPI1STATbits.SPIROV  = 0;
+    SPI1STATbits.SPIEN   = 1;
 
     // Force First Word After Enabling SPI
     /*DMA3REQbits.FORCE = 1;
@@ -101,32 +100,28 @@ void SPI1Initialize(void) {
 
     DMA3_Initialize();
 
-    IFS0bits.SPI1IF = 0;
+    IFS0bits.SPI1IF  = 0;
     IFS0bits.SPI1EIF = 0;
     IEC0bits.SPI1EIE = 1;
-    IEC0bits.SPI1IE = 1;
-    
-    SPI1_SetIntHandler(SPI1_DefInterruptHandler);
+    IEC0bits.SPI1IE  = 1;
 
+    SPI1_SetIntHandler(SPI1_DefInterruptHandler);
 }
 
 void SPI1_Exchange(uint8_t *pTransmitData, uint8_t *pReceiveData) {
-
     while (SPI1STATbits.SPITBF == true) {
-
     }
 
-    SPI1BUF = *((uint16_t*) pTransmitData);
+    SPI1BUF = *((uint16_t *)pTransmitData);
 
-    while (SPI1STATbits.SRXMPT == true);
+    while (SPI1STATbits.SRXMPT == true)
+        ;
 
-    *((uint16_t*) pReceiveData) = SPI1BUF;
-
+    *((uint16_t *)pReceiveData) = SPI1BUF;
 }
 
 uint16_t SPI1_ExchangeBuffer(uint8_t *pTransmitData, uint16_t byteCount, uint8_t *pReceiveData) {
-
-    uint16_t dataSentCount = 0;
+    uint16_t dataSentCount     = 0;
     uint16_t dataReceivedCount = 0;
     uint16_t dummyDataReceived = 0;
     uint16_t dummyDataTransmit = SPI1_DUMMY_DATA;
@@ -138,50 +133,45 @@ uint16_t SPI1_ExchangeBuffer(uint8_t *pTransmitData, uint16_t byteCount, uint8_t
     addressIncrement = 2;
     byteCount >>= 1;
 
-
-    // set the pointers and increment delta 
+    // set the pointers and increment delta
     // for transmit and receive operations
     if (pTransmitData == NULL) {
         sendAddressIncrement = 0;
-        pSend = (uint8_t*) & dummyDataTransmit;
+        pSend                = (uint8_t *)&dummyDataTransmit;
     } else {
         sendAddressIncrement = addressIncrement;
-        pSend = (uint8_t*) pTransmitData;
+        pSend                = (uint8_t *)pTransmitData;
     }
 
     if (pReceiveData == NULL) {
         receiveAddressIncrement = 0;
-        pReceived = (uint8_t*) & dummyDataReceived;
+        pReceived               = (uint8_t *)&dummyDataReceived;
     } else {
         receiveAddressIncrement = addressIncrement;
-        pReceived = (uint8_t*) pReceiveData;
+        pReceived               = (uint8_t *)pReceiveData;
     }
 
-
     while (SPI1STATbits.SPITBF == true) {
-
     }
 
     while (dataSentCount < byteCount) {
         if (SPI1STATbits.SPITBF != true) {
-
-            SPI1BUF = *((uint16_t*) pSend);
+            SPI1BUF = *((uint16_t *)pSend);
 
             pSend += sendAddressIncrement;
             dataSentCount++;
         }
 
         if (SPI1STATbits.SRXMPT == false) {
-            *((uint16_t*) pReceived) = SPI1BUF;
+            *((uint16_t *)pReceived) = SPI1BUF;
 
             pReceived += receiveAddressIncrement;
             dataReceivedCount++;
         }
-
     }
     while (dataReceivedCount < byteCount) {
         if (SPI1STATbits.SRXMPT == false) {
-            *((uint16_t*) pReceived) = SPI1BUF;
+            *((uint16_t *)pReceived) = SPI1BUF;
 
             pReceived += receiveAddressIncrement;
             dataReceivedCount++;
@@ -194,13 +184,13 @@ uint16_t SPI1_ExchangeBuffer(uint8_t *pTransmitData, uint16_t byteCount, uint8_t
 uint16_t SPI1_Exchange16bit(uint16_t data) {
     uint16_t receiveData;
 
-    SPI1_Exchange((uint8_t*) & data, (uint8_t*) & receiveData);
+    SPI1_Exchange((uint8_t *)&data, (uint8_t *)&receiveData);
 
     return (receiveData);
 }
 
 uint16_t SPI1_Exchange16bitBuffer(uint16_t *dataTransmitted, uint16_t byteCount, uint16_t *dataReceived) {
-    return (SPI1_ExchangeBuffer((uint8_t*) dataTransmitted, byteCount, (uint8_t*) dataReceived));
+    return (SPI1_ExchangeBuffer((uint8_t *)dataTransmitted, byteCount, (uint8_t *)dataReceived));
 }
 
 /**
@@ -253,15 +243,14 @@ void __attribute__((__interrupt__, no_auto_psv)) _SPI1ErrInterrupt(void) {
     IFS0bits.SPI1EIF = 0;
 }
 
-
 void DMA3_Initialize(void) {
-    IFS2bits.DMA3IF = 0; // Clear DMA Interrupt Flag
-    IEC2bits.DMA3IE = 1; // Enable DMA interrupt
+    IFS2bits.DMA3IF = 0;  // Clear DMA Interrupt Flag
+    IEC2bits.DMA3IE = 1;  // Enable DMA interrupt
 
-    DMA3CON = 0x2001; // One-Shot, Post-Increment, RAM-to-Peripheral
-    DMA3CNT = 0; // Fifteen DMA requests
-    DMA3REQbits.IRQSEL = 0b00001010; // Select SPI1 Transfer Done
-    DMA3PAD = (volatile uint16_t) &SPI1BUF;
+    DMA3CON            = 0x2001;      // One-Shot, Post-Increment, RAM-to-Peripheral
+    DMA3CNT            = 0;           // Fifteen DMA requests
+    DMA3REQbits.IRQSEL = 0b00001010;  // Select SPI1 Transfer Done
+    DMA3PAD            = (volatile uint16_t) & SPI1BUF;
 
     DMA3STAL = __builtin_dmaoffset(SPI1_TXBUFFER);
     DMA3STAH = 0x0000;
@@ -269,13 +258,13 @@ void DMA3_Initialize(void) {
 
 void __attribute__((__interrupt__, no_auto_psv)) _DMA3Interrupt(void) {
     static uint16_t BufferCount = 0;
-    SPITransmitDone = 1;
+    SPITransmitDone             = 1;
     BufferCount ^= 1;
-    IFS2bits.DMA3IF = 0; // Clear the DMA3 Interrupt Flag
+    IFS2bits.DMA3IF = 0;  // Clear the DMA3 Interrupt Flag
 }
 
 void __attribute__((__interrupt__, no_auto_psv)) _DMA4Interrupt(void) {
-    IFS2bits.DMA4IF = 0; // Clear the DMA4 Interrupt Flag
+    IFS2bits.DMA4IF = 0;  // Clear the DMA4 Interrupt Flag
 }
 
 void SPI1_SetIntHandler(void *handler) {
